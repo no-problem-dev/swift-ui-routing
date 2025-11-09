@@ -5,6 +5,10 @@
 このフォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
 このプロジェクトは [Semantic Versioning](https://semver.org/lang/ja/) に準拠しています。
 
+## [未リリース]
+
+なし
+
 ## [1.0.12] - 2025-11-09
 
 ### 修正
@@ -290,3 +294,5 @@
 [1.0.10]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.9...v1.0.10
 [1.0.9]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.8...v1.0.9
 [1.0.8]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.7...v1.0.8
+
+<!-- Auto-generated on 2025-11-09T01:39:35Z by release workflow -->

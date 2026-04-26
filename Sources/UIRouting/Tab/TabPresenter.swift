@@ -31,6 +31,30 @@ public final class TabPresenter<Tab: Tabbable> {
         self.selectedTab = initialTab
     }
 
+    // MARK: - Stack Observation
+
+    /// 現在選択されているタブの NavigationStack が root より深いかどうか。
+    ///
+    /// 選択中タブで `router.navigate(to:)` により push がスタックされている場合は `true`、
+    /// root にいる (path が空) または router が未登録の場合は `false`。
+    ///
+    /// `@Observable` 配下の `Router.path` を読むため、SwiftUI ビューから
+    /// 観測すると push/pop に追従して再評価される。
+    ///
+    /// # 使用例
+    /// ```swift
+    /// @Environment(.tab(AppTab.self)) private var tabPresenter
+    ///
+    /// var body: some View {
+    ///     ContentView()
+    ///         .toolbar(tabPresenter.isSelectedTabPushed ? .hidden : .visible, for: .tabBar)
+    /// }
+    /// ```
+    public var isSelectedTabPushed: Bool {
+        guard let router = routers[selectedTab.id] else { return false }
+        return !router.path.isEmpty
+    }
+
     // MARK: - Router Registration
 
     /// Router を登録します（TabRoutingModifier から内部的に呼ばれます）。

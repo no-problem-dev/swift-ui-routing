@@ -1,5 +1,8 @@
 # Changelog
 
+## [Unreleased]
+
+
 このプロジェクトに対する注目すべき変更はすべてこのファイルに記録されます。
 
 このフォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、

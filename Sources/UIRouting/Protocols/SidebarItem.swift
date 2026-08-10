@@ -79,7 +79,7 @@ public extension SidebarItem where ContentItem == Never {
 
 /// Derives the identifier from the value's hash.
 public extension SidebarItem where Self: Hashable, ID == Int {
-    var id: Int {
+    nonisolated var id: Int {
         var hasher = Hasher()
         self.hash(into: &hasher)
         return hasher.finalize()
@@ -88,11 +88,11 @@ public extension SidebarItem where Self: Hashable, ID == Int {
 
 /// Compares and hashes by identifier.
 public extension SidebarItem where ID == String {
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
@@ -128,7 +128,7 @@ public protocol Selectable: Hashable, Identifiable {
 
 /// Derives the identifier from the value's hash.
 public extension Selectable where Self: Hashable, ID == Int {
-    var id: Int {
+    nonisolated var id: Int {
         var hasher = Hasher()
         self.hash(into: &hasher)
         return hasher.finalize()
@@ -137,11 +137,11 @@ public extension Selectable where Self: Hashable, ID == Int {
 
 /// Compares and hashes by identifier.
 public extension Selectable where ID == String {
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }

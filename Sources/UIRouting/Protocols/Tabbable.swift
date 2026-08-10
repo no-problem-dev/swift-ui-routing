@@ -62,7 +62,7 @@ public protocol Tabbable<Route>: Hashable, Identifiable {
 
 // MARK: - Default Implementations
 public extension Tabbable where Self: Hashable, ID == Int {
-    var id: Int {
+    nonisolated var id: Int {
         var hasher = Hasher()
         self.hash(into: &hasher)
         return hasher.finalize()
@@ -70,11 +70,11 @@ public extension Tabbable where Self: Hashable, ID == Int {
 }
 
 public extension Tabbable where ID == String {
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }

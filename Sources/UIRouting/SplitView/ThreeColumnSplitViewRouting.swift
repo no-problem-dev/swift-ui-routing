@@ -80,7 +80,7 @@ public struct ThreeColumnSplitViewRouting<
     ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
-        sidebarTitle: String = "サイドバー",
+        sidebarTitle: String = "Sidebar",
         items: [Sidebar],
         @ViewBuilder contentPlaceholder: () -> ContentPlaceholder,
         @ViewBuilder detailPlaceholder: () -> DetailPlaceholder,
@@ -111,7 +111,7 @@ public struct ThreeColumnSplitViewRouting<
                             }
                             onDelete(item)
                         } label: {
-                            Label("削除", systemImage: "trash")
+                            Label("Delete", systemImage: "trash")
                         }
                     }
                 }
@@ -212,7 +212,7 @@ extension ThreeColumnSplitViewRouting where SidebarToolbar == EmptySidebarToolba
     ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
-        sidebarTitle: String = "サイドバー",
+        sidebarTitle: String = "Sidebar",
         items: [Sidebar],
         @ViewBuilder contentPlaceholder: () -> ContentPlaceholder,
         @ViewBuilder detailPlaceholder: () -> DetailPlaceholder,
@@ -238,15 +238,15 @@ extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, DetailPl
     ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
-        sidebarTitle: String = "サイドバー",
+        sidebarTitle: String = "Sidebar",
         items: [Sidebar],
         onDelete: ((Sidebar) -> Void)? = nil
     ) {
         self.splitViewPresenter = splitViewPresenter
         self.sidebarTitle = sidebarTitle
         self.sidebarItems = items
-        self.contentPlaceholder = Text("サイドバーから項目を選択してください")
-        self.detailPlaceholder = Text("項目を選択してください")
+        self.contentPlaceholder = Text("Select an item from the sidebar")
+        self.detailPlaceholder = Text("Select an item")
         self.sidebarToolbar = EmptySidebarToolbar()
         self.onDelete = onDelete
     }
@@ -263,7 +263,7 @@ extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, SidebarT
     ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
-        sidebarTitle: String = "サイドバー",
+        sidebarTitle: String = "Sidebar",
         items: [Sidebar],
         @ViewBuilder detailPlaceholder: () -> DetailPlaceholder,
         onDelete: ((Sidebar) -> Void)? = nil
@@ -271,7 +271,7 @@ extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, SidebarT
         self.splitViewPresenter = splitViewPresenter
         self.sidebarTitle = sidebarTitle
         self.sidebarItems = items
-        self.contentPlaceholder = Text("サイドバーから項目を選択してください")
+        self.contentPlaceholder = Text("Select an item from the sidebar")
         self.detailPlaceholder = detailPlaceholder()
         self.sidebarToolbar = EmptySidebarToolbar()
         self.onDelete = onDelete
@@ -289,7 +289,7 @@ extension ThreeColumnSplitViewRouting where DetailPlaceholder == Text, SidebarTo
     ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
-        sidebarTitle: String = "サイドバー",
+        sidebarTitle: String = "Sidebar",
         items: [Sidebar],
         @ViewBuilder contentPlaceholder: () -> ContentPlaceholder,
         onDelete: ((Sidebar) -> Void)? = nil
@@ -298,7 +298,7 @@ extension ThreeColumnSplitViewRouting where DetailPlaceholder == Text, SidebarTo
         self.sidebarTitle = sidebarTitle
         self.sidebarItems = items
         self.contentPlaceholder = contentPlaceholder()
-        self.detailPlaceholder = Text("項目を選択してください")
+        self.detailPlaceholder = Text("Select an item")
         self.sidebarToolbar = EmptySidebarToolbar()
         self.onDelete = onDelete
     }

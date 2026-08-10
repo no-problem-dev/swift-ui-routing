@@ -39,7 +39,7 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
                     item.label
                 }
             }
-            .navigationTitle("サイドバー")
+            .navigationTitle("Sidebar")
         } detail: {
             // Detail column.
             if let selected = splitViewPresenter.selectedSidebar {

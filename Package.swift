@@ -25,6 +25,14 @@ let package = Package(
         .testTarget(
             name: "UIRoutingTests",
             dependencies: ["UIRouting"]
+        ),
+        // Stands in for a downstream consumer: a plain `import UIRouting` with the
+        // Swift 6 language mode pinned, so an isolated default implementation that
+        // cannot satisfy a nonisolated requirement fails the build here first.
+        .testTarget(
+            name: "ConsumerConformanceTests",
+            dependencies: ["UIRouting"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
         )
     ]
 )

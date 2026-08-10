@@ -63,22 +63,22 @@ public extension Alertable where Self: Hashable, ID == Int {
 }
 
 public extension Alertable where ID == String {
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
 
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
 }
 
 // MARK: - Enum Mirror-based Hashable (closures ignored)
 public extension Alertable where Self: RawRepresentable, Self.RawValue == String {
-    static func == (lhs: Self, rhs: Self) -> Bool {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.rawValue == rhs.rawValue
     }
 
-    func hash(into hasher: inout Hasher) {
+    nonisolated func hash(into hasher: inout Hasher) {
         hasher.combine(rawValue)
     }
 }

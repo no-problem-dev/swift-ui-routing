@@ -80,7 +80,7 @@ public struct SplitViewRouting<Sidebar: SidebarItem, PlaceholderContent: View>: 
                     item.label
                 }
             }
-            .navigationTitle("サイドバー")
+            .navigationTitle("Sidebar")
         } detail: {
             // Detail column.
             if let selected = splitViewPresenter.selectedSidebar {
@@ -128,7 +128,7 @@ extension SplitViewRouting where PlaceholderContent == Text {
         self.init(
             splitViewPresenter: splitViewPresenter,
             items: items,
-            placeholder: { Text("サイドバーから項目を選択してください") }
+            placeholder: { Text("Select an item from the sidebar") }
         )
     }
 }

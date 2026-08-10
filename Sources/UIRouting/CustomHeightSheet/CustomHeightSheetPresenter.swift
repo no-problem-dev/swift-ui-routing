@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// カスタム高さシートの表示を管理する型安全なプレゼンター
+/// Presents sheets that open at heights the sheet itself declares.
 ///
-/// # 使用例
+/// The detents travel with the presented value, so each case can rest at a different height
+/// without the call site knowing anything about it.
+///
 /// ```swift
-/// // 1. カスタム高さシートを定義
+/// // 1. Define the sheets and their detents.
 /// enum AppCustomHeightSheet: CustomHeightSheetable {
 ///     case filter
 ///     case quickSettings
@@ -25,7 +27,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // 2. CustomHeightSheetPresenterインスタンスを作成してEnvironmentに注入
+/// // 2. Create the presenter and inject it into the environment.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -37,7 +39,7 @@ import SwiftUI
 ///         splitViewPresenter: SplitViewPresenter<Never>()
 ///     )
 ///
-/// // 3. .sheet()モディファイアを設定（detents付き）
+/// // 3. Attach a sheet modifier that applies the detents.
 /// var body: some View {
 ///     MainView()
 ///         .sheet(item: Binding(
@@ -49,12 +51,12 @@ import SwiftUI
 ///         }
 /// }
 ///
-/// // 4. カスタム高さシートを表示
+/// // 4. Present one.
 /// struct MainView: View {
 ///     @Environment(.customHeightSheet(CustomHeightSheet.self)) private var customHeightSheetPresenter
 ///
 ///     var body: some View {
-///         Button("フィルターを表示") {
+///         Button("Show filter") {
 ///             customHeightSheetPresenter.present(.filter)
 ///         }
 ///     }
@@ -63,16 +65,17 @@ import SwiftUI
 @MainActor
 @Observable
 public final class CustomHeightSheetPresenter<Sheet> where Sheet: CustomHeightSheetable {
+    /// The sheet currently up, or `nil` when none is.
     public var presentedSheet: Sheet?
 
     public init() {}
 
-    /// 指定したカスタム高さシートを表示
+    /// Puts a sheet up at the detents it declares.
     public func present(_ sheet: Sheet) {
         presentedSheet = sheet
     }
 
-    /// 表示中のカスタム高さシートを閉じる
+    /// Takes the current sheet down.
     public func dismiss() {
         presentedSheet = nil
     }

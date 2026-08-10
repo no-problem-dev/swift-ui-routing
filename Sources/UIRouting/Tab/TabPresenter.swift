@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// TabView の選択状態を管理する型安全なプレゼンター。
+/// Holds which tab is selected, and the router belonging to each tab.
 ///
-/// タブの選択状態を管理し、各タブごとに独立した Router を保持する。
-/// `TabRouting` と組み合わせてタブベースのルーティングを実現する。
-///
-/// # 使用例
+/// Because every tab keeps its own router, switching tabs leaves each stack where the user left
+/// it, and code can navigate inside a tab that is not currently on screen.
 /// ```swift
 /// struct ContentView: View {
 ///     @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
@@ -18,30 +16,25 @@ import SwiftUI
 @MainActor
 @Observable
 public final class TabPresenter<Tab: Tabbable> {
-    /// 現在選択されているタブ
+    /// The tab on screen. Assigning to it switches tabs, and so does the tab bar.
     public var selectedTab: Tab
 
-    /// 各タブごとの Router を保持
+    /// Routers registered by each tab's routing modifier, keyed by tab identifier.
     private var routers: [Tab.ID: Router<Tab.Route>] = [:]
 
-    /// TabPresenter を初期化する。
+    /// Creates a presenter with the tab that should be selected first.
     ///
-    /// - Parameter initialTab: 最初に選択されるタブ
+    /// - Parameter initialTab: The tab shown before the user picks another.
     public init(initialTab: Tab) {
         self.selectedTab = initialTab
     }
 
     // MARK: - Stack Observation
 
-    /// 現在選択されているタブの NavigationStack が root より深いかどうか。
+    /// Whether the selected tab has pushed anything past its root.
     ///
-    /// 選択中タブで `router.navigate(to:)` により push がスタックされている場合は `true`、
-    /// root にいる (path が空) または router が未登録の場合は `false`。
-    ///
-    /// `@Observable` 配下の `Router.path` を読むため、SwiftUI ビューから
-    /// 観測すると push/pop に追従して再評価される。
-    ///
-    /// # 使用例
+    /// Reading it from a view tracks pushes and pops, which makes it the hook for hiding the tab
+    /// bar on deeper screens. It stays `false` while that tab's router is still unregistered.
     /// ```swift
     /// @Environment(.tab(AppTab.self)) private var tabPresenter
     ///
@@ -57,43 +50,39 @@ public final class TabPresenter<Tab: Tabbable> {
 
     // MARK: - Router Registration
 
-    /// Router を登録する（TabRoutingModifier から内部的に呼ばれる）。
+    /// Records the router that drives one tab's navigation stack.
     ///
     /// - Parameters:
-    ///   - router: 登録する Router
-    ///   - tab: Router を登録するタブ
+    ///   - router: The router to record.
+    ///   - tab: The tab it belongs to.
     internal func registerRouter(_ router: Router<Tab.Route>, for tab: Tab) {
         routers[tab.id] = router
     }
 
     // MARK: - Tab Selection
 
-    /// 指定したタブを選択する。
-    ///
-    /// # 使用例
+    /// Switches to a tab, leaving its navigation stack as the user left it.
     /// ```swift
     /// @Environment(.tab(AppTab.self)) private var tabPresenter
     ///
-    /// Button("設定タブへ移動") {
+    /// Button("Go to settings") {
     ///     tabPresenter.select(.settings)
     /// }
     /// ```
     ///
-    /// - Parameter tab: 選択するタブ
+    /// - Parameter tab: The tab to switch to.
     public func select(_ tab: Tab) {
         selectedTab = tab
     }
 
-    /// 指定したタブを選択し、そのタブのコンテキストでコールバックを実行する。
+    /// Switches to a tab and then navigates inside it.
     ///
-    /// タブ切り替えと同時に、そのタブの Router を使った画面遷移を行いたい場合に使う。
-    /// コールバックはタブ切り替えのアニメーション完了後に実行される。
-    ///
-    /// # 使用例
+    /// The callback runs after the tab transition, which is what keeps the push from being
+    /// swallowed by the animation. It is skipped when that tab has no router registered yet.
     /// ```swift
     /// @Environment(.tab(AppTab.self)) private var tabPresenter
     ///
-    /// Button("ホームタブで詳細画面を開く") {
+    /// Button("Open a detail screen in Home") {
     ///     tabPresenter.select(.home) { context in
     ///         context.router.navigate(to: .detail(id: "123"))
     ///     }
@@ -101,14 +90,14 @@ public final class TabPresenter<Tab: Tabbable> {
     /// ```
     ///
     /// - Parameters:
-    ///   - tab: 選択するタブ
-    ///   - callback: タブ選択後に実行されるコールバック（TabContext を受け取る）
+    ///   - tab: The tab to switch to.
+    ///   - callback: Work to run once that tab is on screen, given its routing context.
     public func select(_ tab: Tab, then callback: @escaping (TabContext<Tab.Route>) -> Void) {
         selectedTab = tab
 
-        // タブ切り替えが完了してからコールバックを実行
+        // Run the callback only once the tab has actually changed.
         Task { @MainActor in
-            // TabViewのアニメーション完了を待つ
+            // Wait for the tab transition to finish.
             try? await Task.sleep(for: .milliseconds(100))
 
             guard let router = routers[tab.id] else {

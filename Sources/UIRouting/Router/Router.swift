@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// NavigationStack のパスを管理する型安全なルーター
+/// Owns the path of one navigation stack.
 ///
-/// # 使用例
+/// One router drives one stack, so a tab-based or split-view app has several; each is reached
+/// from the environment by the route type it carries.
+///
 /// ```swift
-/// // 1. 画面遷移先を定義
+/// // 1. Define the destinations.
 /// enum Screen: Routable {
 ///     case profile(userId: String)
 ///     case settings
@@ -25,7 +27,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // 2. Routerインスタンスを作成してEnvironmentに注入
+/// // 2. Create the router and inject it into the environment.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -34,18 +36,18 @@ import SwiftUI
 ///         alertPresenterOnSheet: AlertPresenter<Alert>()
 ///     )
 ///
-/// // 3. NavigationStackとroutingScopeを設定
+/// // 3. Set up the navigation stack.
 /// var body: some View {
 ///     HomeView()
 ///         .routingScope(for: Screen.self, alert: Alert.self)
 /// }
 ///
-/// // 4. 画面遷移を実行
+/// // 4. Navigate.
 /// struct HomeView: View {
 ///     @Environment(.router(Screen.self)) private var router
 ///
 ///     var body: some View {
-///         Button("プロフィールを表示") {
+///         Button("Show profile") {
 ///             router.navigate(to: .profile(userId: "123"))
 ///         }
 ///     }
@@ -54,27 +56,28 @@ import SwiftUI
 @MainActor
 @Observable
 public final class Router<Route: Routable> {
+    /// The destinations pushed onto the stack, in order.
     public var path: [Route] = []
 
     public init() {}
 
-    /// 指定した画面に遷移
+    /// Pushes a destination onto the stack.
     public func navigate(to route: Route) {
         path.append(route)
     }
 
-    /// 前の画面に戻る
+    /// Pops the top destination, doing nothing at the root.
     public func back() {
         guard !path.isEmpty else { return }
         path.removeLast()
     }
 
-    /// ルート画面まで戻る
+    /// Pops everything at once, returning to the root.
     public func popToRoot() {
         path.removeAll()
     }
 
-    /// 現在の画面を置き換え
+    /// Replaces the top destination, or pushes it when the stack is empty.
     public func replace(with route: Route) {
         if path.isEmpty {
             path.append(route)

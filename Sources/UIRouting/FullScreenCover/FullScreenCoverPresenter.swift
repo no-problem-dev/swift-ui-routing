@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// フルスクリーンカバーの表示を管理する型安全なプレゼンター
+/// Presents full-screen covers of one type.
 ///
-/// # 使用例
+/// On macOS the cover is shown as an ordinary sheet, because AppKit has no equivalent.
+///
 /// ```swift
-/// // 1. カバー画面を定義
+/// // 1. Define the covers.
 /// enum AppFullScreenCover: FullScreenCoverable {
 ///     case onboarding
 ///     case camera
@@ -18,7 +19,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // 2. FullScreenCoverPresenterインスタンスを作成してEnvironmentに注入
+/// // 2. Create the presenter and inject it into the environment.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -30,7 +31,7 @@ import SwiftUI
 ///         splitViewPresenter: SplitViewPresenter<Never>()
 ///     )
 ///
-/// // 3. .fullScreenCover()モディファイアを設定
+/// // 3. Attach the cover modifier.
 /// var body: some View {
 ///     MainView()
 ///         .fullScreenCover(item: Binding(
@@ -41,12 +42,12 @@ import SwiftUI
 ///         }
 /// }
 ///
-/// // 4. カバーを表示
+/// // 4. Present a cover.
 /// struct MainView: View {
 ///     @Environment(.fullScreenCover(FullScreenCover.self)) private var fullScreenCoverPresenter
 ///
 ///     var body: some View {
-///         Button("オンボーディングを表示") {
+///         Button("Show onboarding") {
 ///             fullScreenCoverPresenter.present(.onboarding)
 ///         }
 ///     }
@@ -55,16 +56,17 @@ import SwiftUI
 @MainActor
 @Observable
 public final class FullScreenCoverPresenter<Cover> where Cover: Identifiable & Hashable {
+    /// The cover currently up, or `nil` when none is.
     public var presentedCover: Cover?
 
     public init() {}
 
-    /// 指定したフルスクリーンカバーを表示
+    /// Puts a cover up.
     public func present(_ cover: Cover) {
         presentedCover = cover
     }
 
-    /// 表示中のフルスクリーンカバーを閉じる
+    /// Takes the current cover down.
     public func dismiss() {
         presentedCover = nil
     }

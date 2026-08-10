@@ -2,9 +2,10 @@ import SwiftUI
 
 // MARK: - Conditional Presentation Modifier
 
-/// Alert が必要な場合のみ適用する内部用 Modifier。
+/// Attaches the alert modifier only when the alert type is not `Never`.
 ///
-/// Alert 型が Never でない場合のみ、アラート表示機能を適用する。
+/// Lets the routing modifiers stay uniform while a screen that declares no alerts pays nothing
+/// for the machinery.
 struct AlertModifierIfNeeded<Alert: Alertable>: ViewModifier {
     @Bindable var presenter: AlertPresenter<Alert>
 
@@ -40,10 +41,10 @@ struct AlertModifierIfNeeded<Alert: Alertable>: ViewModifier {
 
 // MARK: - Context-Specific Modifiers
 
-/// Navigation コンテキストでアラートを表示する ViewModifier。
+/// Shows alerts raised on the navigation layer.
 ///
-/// NavigationStack 内でアラートを表示するために使用する。
-/// `.routingScope()` により自動適用されるため、通常は直接使用する必要はない。
+/// Applied for you by `routingScope(for:alert:)`; reach for it directly only when you build the
+/// navigation stack yourself.
 public struct AlertOnNavigationModifier<Alert: Alertable>: ViewModifier {
     @Environment private var alertPresenter: AlertPresenter<Alert>
 
@@ -77,10 +78,9 @@ public struct AlertOnNavigationModifier<Alert: Alertable>: ViewModifier {
     }
 }
 
-/// Sheet コンテキストでアラートを表示する ViewModifier。
+/// Shows alerts raised from inside a sheet.
 ///
-/// シート内でアラートを表示するために使用する。
-/// シート内のビューに `.sheetAlert()` を適用することで有効化される。
+/// Nothing applies it for you: apply `sheetAlert(for:)` to the sheet's own content.
 public struct AlertOnSheetModifier<Alert: Alertable>: ViewModifier {
     @Environment private var alertPresenter: AlertPresenter<Alert>
 
@@ -115,42 +115,39 @@ public struct AlertOnSheetModifier<Alert: Alertable>: ViewModifier {
 }
 
 public extension View {
-    /// Navigation コンテキストでアラートを表示可能にする。
+    /// Enables alerts raised on the navigation layer for this view.
     ///
-    /// 通常は `.routingScope()` により自動適用されるため、直接呼ぶ必要はない。
-    /// 独自の NavigationStack を使用する場合など、高度なユースケースで明示的に適用する。
+    /// `routingScope(for:alert:)` already does this. Call it directly only when you build the
+    /// navigation stack yourself.
     ///
-    /// # 使用例
     /// ```swift
-    /// // 基本パターン（推奨）
+    /// // The usual way
     /// ContentView()
     ///     .routingScope(for: AppRoute.self, alert: AppAlert.self)
     ///
-    /// // 高度な使い方: 独自NavigationStackを使う場合
+    /// // Building the stack yourself
     /// NavigationStack(path: $customPath) {
     ///     ContentView()
     ///         .routingAlert(for: AppAlert.self)
     /// }
     /// ```
     ///
-    /// - Parameter for: アラートの型
-    /// - Returns: アラート表示が有効化されたビュー
+    /// - Parameter for: The alert type to show.
     func routingAlert<Alert: Alertable>(for: Alert.Type) -> some View {
         modifier(AlertOnNavigationModifier<Alert>())
     }
 
-    /// Sheet 内でアラートを表示可能にする。
+    /// Enables alerts raised from inside a sheet for this view.
     ///
-    /// シート内のビューでアラートを表示したい場合に使用する。
-    ///
-    /// # 使用例
+    /// Apply it to the sheet's content: alerts asked for there are invisible to the navigation
+    /// layer's modifier.
     /// ```swift
     /// struct SettingsSheet: View {
     ///     @Environment(.alert(AppAlert.self, context: .sheet)) private var alertPresenter
     ///
     ///     var body: some View {
     ///         Form {
-    ///             Button("削除") {
+    ///             Button("Delete") {
     ///                 alertPresenter.present(.confirmDelete)
     ///             }
     ///         }
@@ -159,8 +156,7 @@ public extension View {
     /// }
     /// ```
     ///
-    /// - Parameter for: アラートの型
-    /// - Returns: アラート表示が有効化されたビュー
+    /// - Parameter for: The alert type to show.
     func sheetAlert<Alert: Alertable>(for: Alert.Type) -> some View {
         modifier(AlertOnSheetModifier<Alert>())
     }

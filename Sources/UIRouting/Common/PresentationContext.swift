@@ -2,13 +2,13 @@ import SwiftUI
 
 // MARK: - Presentation Context
 
-/// プレゼンテーション表示のコンテキスト
+/// The layer a sheet, cover, or alert is attached to.
 ///
-/// シート、フルスクリーンカバー、カスタム高さシート、アラートなどの
-/// プレゼンテーションが表示される階層を指定する。
+/// SwiftUI cannot present from a view that is already covered, so anything opened from inside
+/// a sheet needs its own layer or it silently never appears.
 public enum PresentationContext: Hashable {
-    /// ナビゲーション階層（デフォルト）
+    /// The main navigation layer, and the default for every presenter.
     case navigation
-    /// シート階層（シート内からさらにプレゼンテーションを開く場合）
+    /// The layer of an open sheet, for presentations triggered from inside it.
     case sheet
 }

@@ -2,10 +2,9 @@ import SwiftUI
 
 // MARK: - Conditional Presentation Modifier
 
-/// FullScreenCover が必要な場合のみ適用する内部用 Modifier。
+/// Attaches the cover modifier only when the cover type is not `Never`.
 ///
-/// FullScreen 型が Never でない場合のみ、フルスクリーンカバー機能を適用する。
-/// macOS では fullScreenCover が利用できないため、通常の sheet を使用する。
+/// On macOS it falls back to a sheet, since full-screen covers do not exist there.
 struct FullScreenCoverModifierIfNeeded<FullScreen: FullScreenCoverable>: ViewModifier {
     @Bindable var presenter: FullScreenCoverPresenter<FullScreen>
     @Environment(\.self) private var environment
@@ -36,11 +35,10 @@ struct FullScreenCoverModifierIfNeeded<FullScreen: FullScreenCoverable>: ViewMod
 // MARK: - Public Full Screen Cover Presenter Modifier
 
 public extension View {
-    /// シート内でフルスクリーンカバープレゼンターを有効化するモディファイア
+    /// Creates a full-screen cover presenter for the sheet layer.
     ///
-    /// シート内から別のフルスクリーンカバーを開く場合に使用する。
-    ///
-    /// # 使用例
+    /// Apply it inside a sheet that opens a cover; the presenter it installs is the one
+    /// `context: .sheet` reads back.
     /// ```swift
     /// struct SettingsSheet: View {
     ///     @Environment(.fullScreenCover(AppCover.self, context: .sheet)) private var presenter
@@ -54,14 +52,13 @@ public extension View {
     /// }
     /// ```
     ///
-    /// - Parameter type: フルスクリーンカバーの型
-    /// - Returns: フルスクリーンカバープレゼンターが有効化されたビュー
+    /// - Parameter type: The cover type this presenter handles.
     func fullScreenCoverPresenter<Cover: FullScreenCoverable>(for type: Cover.Type) -> some View {
         modifier(FullScreenCoverPresenterModifier<Cover>())
     }
 }
 
-/// シート内でフルスクリーンカバープレゼンターを有効化する Modifier
+/// Owns a full-screen cover presenter for the sheet layer.
 struct FullScreenCoverPresenterModifier<Cover: FullScreenCoverable>: ViewModifier {
     @State private var presenter = FullScreenCoverPresenter<Cover>()
 

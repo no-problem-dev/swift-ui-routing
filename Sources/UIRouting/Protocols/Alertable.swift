@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// アラートダイアログを表すプロトコル。
+/// A dialog that can be raised by an alert presenter.
 ///
-/// `Alertable` に準拠した型は、型安全なアラート表示に使用できる。
-/// `Identifiable` と `Hashable` の実装は自動的に提供される。
-///
-/// # 使用例
+/// Conformance is normally an enum: `Identifiable` and `Hashable` come for free, so a case can
+/// carry the confirmation closure it needs without any extra boilerplate.
 /// ```swift
 /// enum Alert: Alertable {
 ///     case delete(itemName: String, onConfirm: () -> Void)
@@ -13,15 +11,15 @@ import SwiftUI
 ///
 ///     var title: String {
 ///         switch self {
-///         case .delete: return "削除の確認"
-///         case .error: return "エラー"
+///         case .delete: return "Confirm deletion"
+///         case .error: return "Error"
 ///         }
 ///     }
 ///
 ///     var message: String? {
 ///         switch self {
 ///         case .delete(let itemName, _):
-///             return "\(itemName)を削除してもよろしいですか？"
+///             return "Delete \(itemName)?"
 ///         case .error(let msg):
 ///             return msg
 ///         }
@@ -31,8 +29,8 @@ import SwiftUI
 ///         switch self {
 ///         case .delete(_, let onConfirm):
 ///             return [
-///                 AlertAction(title: "キャンセル", role: .cancel) {},
-///                 AlertAction(title: "削除", role: .destructive, action: onConfirm)
+///                 AlertAction(title: "Cancel", role: .cancel) {},
+///                 AlertAction(title: "Delete", role: .destructive, action: onConfirm)
 ///             ]
 ///         case .error:
 ///             return [AlertAction(title: "OK") {}]
@@ -41,19 +39,17 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// # 注意
-/// - クロージャを含む associated value がある場合でも、`Hashable` 実装は不要
-/// - クロージャは自動的に無視され、case 名と Hashable 型の値のみで同一性が判定される
-/// - `id` プロパティの実装も不要（自動生成される）
+/// Identity comes from the case name plus its hashable associated values, so do not write
+/// `id`, `==`, or `hash(into:)` yourself — all three are provided.
 @MainActor
 public protocol Alertable: Identifiable, Hashable {
-    /// アラートのタイトル
+    /// Text shown in bold at the top of the dialog.
     var title: String { get }
 
-    /// アラートの詳細メッセージ
+    /// Explanatory text below the title, or `nil` to show none.
     var message: String? { get }
 
-    /// アラートのアクションボタン
+    /// The buttons of the dialog, rendered in the order given.
     var actions: [AlertAction] { get }
 }
 
@@ -76,7 +72,7 @@ public extension Alertable where ID == String {
     }
 }
 
-// MARK: - Enum Mirror-based Hashable (クロージャを自動的に無視)
+// MARK: - Enum Mirror-based Hashable (closures ignored)
 public extension Alertable where Self: RawRepresentable, Self.RawValue == String {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.rawValue == rhs.rawValue
@@ -89,17 +85,20 @@ public extension Alertable where Self: RawRepresentable, Self.RawValue == String
 
 // MARK: - Enum without RawValue (Mirror-based)
 public extension Alertable {
-    /// enumのcase名とHashable型のassociated valueのみでハッシュ化（クロージャは無視）
+    /// Compares two values by case name and by their hashable associated values.
+    ///
+    /// Closure payloads are skipped, which is what lets a case carry a callback and still be
+    /// compared and hashed.
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         let lhsMirror = Mirror(reflecting: lhs)
         let rhsMirror = Mirror(reflecting: rhs)
 
-        // case名が異なれば不一致
+        // Different case names mean the values are not equal.
         guard lhsMirror.children.first?.label == rhsMirror.children.first?.label else {
             return false
         }
 
-        // associated valueを比較（Hashable型のみ、クロージャは無視）
+        // Compare associated values, hashable ones only.
         let lhsHashableValues = extractHashableValues(from: lhs)
         let rhsHashableValues = extractHashableValues(from: rhs)
 
@@ -109,10 +108,10 @@ public extension Alertable {
     nonisolated func hash(into hasher: inout Hasher) {
         let mirror = Mirror(reflecting: self)
 
-        // case名をハッシュ
+        // Hash the case name.
         hasher.combine(mirror.children.first?.label ?? "")
 
-        // Hashable型のassociated valueのみハッシュ（クロージャは無視）
+        // Hash only the hashable associated values.
         let hashableValues = extractHashableValues(from: self)
         hasher.combine(hashableValues)
     }
@@ -125,7 +124,7 @@ public extension Alertable {
 
         let valuesMirror = Mirror(reflecting: values)
         return valuesMirror.children.compactMap { child -> AnyHashable? in
-            // クロージャ型はAnyHashableに変換できないので自動的にフィルタされる
+            // Closures cannot be cast to AnyHashable, so they drop out here.
             child.value as? AnyHashable
         }
     }
@@ -135,40 +134,36 @@ public extension Alertable {
     }
 }
 
-/// アラートのアクションボタンを表す構造体。
+/// A button in an alert dialog.
 ///
-/// アラートダイアログに表示するボタンの情報を保持する。
-/// タイトル、役割（キャンセル、破壊的操作など）、実行するアクションを指定できる。
+/// Two actions are equal when their titles match: the closure takes no part in identity, so a
+/// dialog rebuilt with a fresh callback still compares as the same alert.
 ///
-/// # 使用例
 /// ```swift
-/// // 通常のボタン
 /// AlertAction(title: "OK") { print("OK tapped") }
 ///
-/// // キャンセルボタン
-/// AlertAction(title: "キャンセル", role: .cancel) {}
+/// AlertAction(title: "Cancel", role: .cancel) {}
 ///
-/// // 破壊的操作ボタン
-/// AlertAction(title: "削除", role: .destructive) {
+/// AlertAction(title: "Delete", role: .destructive) {
 ///     deleteItem()
 /// }
 /// ```
 public struct AlertAction: Hashable {
-    /// ボタンのタイトル
+    /// The label on the button, and the only thing used to compare two actions.
     public let title: String
 
-    /// ボタンの役割（.cancel、.destructive など）
+    /// The role that decides styling and placement, or `nil` for a plain button.
     public let role: ButtonRole?
 
-    /// ボタンがタップされたときに実行されるアクション
+    /// The closure to run on tap. It takes no part in equality or hashing.
     public let action: () -> Void
 
-    /// アラートアクションを初期化する。
+    /// Creates a button for an alert dialog.
     ///
     /// - Parameters:
-    ///   - title: ボタンのタイトル
-    ///   - role: ボタンの役割（省略可）
-    ///   - action: ボタンがタップされたときに実行されるクロージャ
+    ///   - title: The label shown on the button.
+    ///   - role: The role that decides styling and placement.
+    ///   - action: The closure to run when the button is tapped.
     public init(
         title: String,
         role: ButtonRole? = nil,

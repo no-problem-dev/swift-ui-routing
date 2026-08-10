@@ -1,17 +1,12 @@
 import SwiftUI
 
-/// 3カラムNavigationSplitViewのルーティングシステム。
+/// A three-column split view — sidebar, list, detail — each column with its own selection and
+/// navigation stack.
 ///
-/// サイドバー | コンテンツ（中央） | 詳細（右）の3カラムレイアウトで、
-/// 各カラムの選択状態とナビゲーションを一元管理する。
-///
-/// # 機能
-/// - **サイドバー選択**: `SplitViewPresenter.selectedSidebar`
-/// - **コンテンツ選択**: `SplitViewPresenter.selectedContent`（中央カラムのリスト選択）
-/// - **コンテンツ内ナビゲーション**: `ContentRoute`（中央カラム内でのpush遷移）
-/// - **詳細内ナビゲーション**: `DetailRoute`（右カラム内でのpush遷移）
-///
-/// # 使用例
+/// The presenter holds both selections, `selectedSidebar` and `selectedContent`, while the
+/// middle and detail columns each get a router driven by `ContentRoute` and `DetailRoute`.
+/// Changing the sidebar clears the content selection, since a row chosen under the old sidebar
+/// item means nothing under the new one.
 /// ```swift
 /// @State private var splitViewPresenter = SplitViewPresenter<MailSidebar>(initialSelection: .inbox)
 ///
@@ -21,14 +16,14 @@ import SwiftUI
 /// )
 /// ```
 ///
-/// # サイドバーツールバー付きの使用例
+/// With a toolbar in the sidebar:
 /// ```swift
 /// ThreeColumnSplitViewRouting(
 ///     splitViewPresenter: splitViewPresenter,
-///     sidebarTitle: "セッション一覧",
+///     sidebarTitle: "Sessions",
 ///     items: sessions,
-///     contentPlaceholder: { Text("選択してください") },
-///     detailPlaceholder: { Text("詳細") }
+///     contentPlaceholder: { Text("Select a session") },
+///     detailPlaceholder: { Text("Select an item") }
 /// ) {
 ///     ToolbarItem(placement: .primaryAction) {
 ///         Button { } label: { Image(systemName: "plus") }
@@ -36,29 +31,26 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// # SidebarItem定義例
+/// The sidebar type that drives it:
 /// ```swift
 /// enum MailSidebar: SidebarItem {
 ///     case inbox, sent, archive, starred
 ///
-///     // 3カラムに必要な型定義
-///     typealias ContentItem = Email           // 中央カラムで選択するアイテム
-///     typealias ContentRoute = MailContentRoute // 中央カラム内のナビゲーション
-///     typealias DetailRoute = MailRoute       // 右カラム内のナビゲーション
+///     // The types the three columns route with
+///     typealias ContentItem = Email           // selected in the middle column
+///     typealias ContentRoute = MailContentRoute // pushes inside the middle column
+///     typealias DetailRoute = MailRoute       // pushes inside the detail column
 ///     typealias Sheet = MailSheet
 ///     typealias Alert = MailAlert
 ///
-///     var label: some View { /* サイドバーのラベル */ }
-///     var contentView: some View { MailListView(sidebarItem: self) }  // 中央カラム
-///     var detail: some View { MailDetailWrapperView() }               // 右カラム
+///     var label: some View { /* the sidebar row */ }
+///     var contentView: some View { MailListView(sidebarItem: self) }  // middle column
+///     var detail: some View { MailDetailWrapperView() }               // detail column
 /// }
 /// ```
 ///
-/// # ルーティング階層
-/// 1. **サイドバー切り替え**: `.inbox` → `.sent` など
-/// 2. **コンテンツ選択**: メールをタップ → 詳細に表示
-/// 3. **コンテンツ内遷移**: フィルタや検索ビューへpush（ContentRoute）
-/// 4. **詳細内遷移**: 送信者情報や添付ファイルへpush（DetailRoute）
+/// Four movements are possible: switching the sidebar, selecting a row in the middle column,
+/// pushing inside the middle column, and pushing inside the detail column.
 public struct ThreeColumnSplitViewRouting<
     Sidebar: SidebarItem,
     ContentPlaceholder: View,
@@ -76,16 +68,16 @@ public struct ThreeColumnSplitViewRouting<
     private let sidebarToolbar: SidebarToolbar
     private let onDelete: ((Sidebar) -> Void)?
 
-    /// 3カラムスプリットビュールーティングを初期化する。
+    /// Creates a three-column split view with a toolbar in the sidebar.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーとコンテンツの選択状態を管理する SplitViewPresenter
-    ///   - sidebarTitle: サイドバーのナビゲーションタイトル。デフォルトは「サイドバー」。
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - contentPlaceholder: サイドバー未選択時に表示するコンテンツプレースホルダー
-    ///   - detailPlaceholder: コンテンツ未選択時に表示する詳細プレースホルダー
-    ///   - sidebarToolbar: サイドバーのナビゲーションバーに表示するツールバーコンテンツ
-    ///   - onDelete: サイドバー項目を削除する際のコールバック。nilの場合はスワイプ削除無効。
+    ///   - splitViewPresenter: Holds the sidebar and content selections.
+    ///   - sidebarTitle: Navigation title of the sidebar column.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - contentPlaceholder: Shown in the middle column while no sidebar row is selected.
+    ///   - detailPlaceholder: Shown in the detail column while no content row is selected.
+    ///   - sidebarToolbar: Toolbar content for the sidebar's navigation bar.
+    ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         sidebarTitle: String = "サイドバー",
@@ -106,7 +98,7 @@ public struct ThreeColumnSplitViewRouting<
 
     public var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
-            // サイドバー
+            // Sidebar column.
             List(sidebarItems, selection: $splitViewPresenter.selectedSidebar) { item in
                 NavigationLink(value: item) {
                     item.label
@@ -128,11 +120,11 @@ public struct ThreeColumnSplitViewRouting<
             .toolbar { sidebarToolbar }
             .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 300)
         } content: {
-            // コンテンツ（メールリスト等）
+            // Middle column.
             Group {
                 if let selected = splitViewPresenter.selectedSidebar {
                     if Sidebar.ContentRoute.self != Never.self {
-                        // ContentRouteがある場合はNavigationStackでラップ
+                        // Routed middle column: wrap it in a navigation stack.
                         NavigationStack(path: $contentRouter.path) {
                             selected.contentView
                                 .threeColumnContentRouting(for: Sidebar.self)
@@ -146,7 +138,7 @@ public struct ThreeColumnSplitViewRouting<
                             environment[selectedContentBinding: SelectedContentBindingSpecifier<Sidebar.ContentItem>()] = $splitViewPresenter.selectedContent
                         }
                     } else {
-                        // ContentRouteがない場合はそのまま表示
+                        // No routes: show the view as is.
                         selected.contentView
                             .threeColumnContentRouting(for: Sidebar.self)
                             .transformEnvironment(\.self) { environment in
@@ -154,17 +146,17 @@ public struct ThreeColumnSplitViewRouting<
                             }
                     }
                 } else {
-                    // サイドバー未選択時のプレースホルダー
+                    // Nothing selected in the sidebar.
                     contentPlaceholder
                 }
             }
             .navigationSplitViewColumnWidth(min: 400, ideal: 560, max: 720)
         } detail: {
-            // 詳細ビュー
+            // Detail column.
             Group {
                 if let selected = splitViewPresenter.selectedSidebar {
                     if Sidebar.DetailRoute.self != Never.self {
-                        // DetailRouteがある場合はNavigationStackでラップ
+                        // Routed detail column: wrap it in a navigation stack.
                         NavigationStack(path: $detailRouter.path) {
                             selected.detail
                                 .threeColumnDetailRouting(for: Sidebar.self)
@@ -177,12 +169,12 @@ public struct ThreeColumnSplitViewRouting<
                             environment[router: RouterSpecifier<Sidebar.DetailRoute>()] = detailRouter
                         }
                     } else {
-                        // DetailRouteがない場合はそのまま表示
+                        // No routes: show the view as is.
                         selected.detail
                             .threeColumnDetailRouting(for: Sidebar.self)
                     }
                 } else {
-                    // コンテンツ未選択時のプレースホルダー
+                    // Nothing selected in the middle column.
                     detailPlaceholder
                 }
             }
@@ -197,9 +189,7 @@ public struct ThreeColumnSplitViewRouting<
 
 // MARK: - Empty Sidebar Toolbar
 
-/// サイドバーツールバーなしを表す型。
-///
-/// ツールバーパラメータを省略した場合のデフォルト型として使われる。
+/// The stand-in used when a split view is created without sidebar toolbar content.
 public struct EmptySidebarToolbar: ToolbarContent {
     public var body: some ToolbarContent {
         ToolbarItem(placement: .automatic) {
@@ -211,15 +201,15 @@ public struct EmptySidebarToolbar: ToolbarContent {
 // MARK: - Convenience Initializers (Without Toolbar)
 
 extension ThreeColumnSplitViewRouting where SidebarToolbar == EmptySidebarToolbar {
-    /// ツールバーなしの3カラムスプリットビュールーティングを初期化する。
+    /// Creates a three-column split view with no sidebar toolbar.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーとコンテンツの選択状態を管理する SplitViewPresenter
-    ///   - sidebarTitle: サイドバーのナビゲーションタイトル。デフォルトは「サイドバー」。
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - contentPlaceholder: サイドバー未選択時に表示するコンテンツプレースホルダー
-    ///   - detailPlaceholder: コンテンツ未選択時に表示する詳細プレースホルダー
-    ///   - onDelete: サイドバー項目を削除する際のコールバック。nilの場合はスワイプ削除無効。
+    ///   - splitViewPresenter: Holds the sidebar and content selections.
+    ///   - sidebarTitle: Navigation title of the sidebar column.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - contentPlaceholder: Shown in the middle column while no sidebar row is selected.
+    ///   - detailPlaceholder: Shown in the detail column while no content row is selected.
+    ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         sidebarTitle: String = "サイドバー",
@@ -239,13 +229,13 @@ extension ThreeColumnSplitViewRouting where SidebarToolbar == EmptySidebarToolba
 }
 
 extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, DetailPlaceholder == Text, SidebarToolbar == EmptySidebarToolbar {
-    /// プレースホルダーにデフォルトテキストを使用するイニシャライザ。
+    /// Creates a three-column split view with stock placeholders in both columns.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーとコンテンツの選択状態を管理する SplitViewPresenter
-    ///   - sidebarTitle: サイドバーのナビゲーションタイトル。デフォルトは「サイドバー」。
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - onDelete: サイドバー項目を削除する際のコールバック。nilの場合はスワイプ削除無効。
+    ///   - splitViewPresenter: Holds the sidebar and content selections.
+    ///   - sidebarTitle: Navigation title of the sidebar column.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         sidebarTitle: String = "サイドバー",
@@ -263,14 +253,14 @@ extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, DetailPl
 }
 
 extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, SidebarToolbar == EmptySidebarToolbar {
-    /// コンテンツプレースホルダーにデフォルトテキストを使用するイニシャライザ。
+    /// Creates a three-column split view with a stock placeholder in the middle column.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーとコンテンツの選択状態を管理する SplitViewPresenter
-    ///   - sidebarTitle: サイドバーのナビゲーションタイトル。デフォルトは「サイドバー」。
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - detailPlaceholder: コンテンツ未選択時に表示する詳細プレースホルダー
-    ///   - onDelete: サイドバー項目を削除する際のコールバック。nilの場合はスワイプ削除無効。
+    ///   - splitViewPresenter: Holds the sidebar and content selections.
+    ///   - sidebarTitle: Navigation title of the sidebar column.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - detailPlaceholder: Shown in the detail column while no content row is selected.
+    ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         sidebarTitle: String = "サイドバー",
@@ -289,14 +279,14 @@ extension ThreeColumnSplitViewRouting where ContentPlaceholder == Text, SidebarT
 }
 
 extension ThreeColumnSplitViewRouting where DetailPlaceholder == Text, SidebarToolbar == EmptySidebarToolbar {
-    /// 詳細プレースホルダーにデフォルトテキストを使用するイニシャライザ。
+    /// Creates a three-column split view with a stock placeholder in the detail column.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーとコンテンツの選択状態を管理する SplitViewPresenter
-    ///   - sidebarTitle: サイドバーのナビゲーションタイトル。デフォルトは「サイドバー」。
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - contentPlaceholder: サイドバー未選択時に表示するコンテンツプレースホルダー
-    ///   - onDelete: サイドバー項目を削除する際のコールバック。nilの場合はスワイプ削除無効。
+    ///   - splitViewPresenter: Holds the sidebar and content selections.
+    ///   - sidebarTitle: Navigation title of the sidebar column.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - contentPlaceholder: Shown in the middle column while no sidebar row is selected.
+    ///   - onDelete: Called when a row is swiped away. Pass `nil` to disable swipe to delete.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         sidebarTitle: String = "サイドバー",

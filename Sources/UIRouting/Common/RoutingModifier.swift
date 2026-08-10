@@ -1,11 +1,8 @@
 import SwiftUI
 
-/// ルーティング環境を注入する ViewModifier。
+/// Puts a router and every presenter into the environment of the views below it.
 ///
-/// Router、SheetPresenter、AlertPresenter などのルーティングコンポーネントを
-/// 環境値として注入し、子ビュー全体で利用可能にする。
-///
-/// 通常は `.routing()` モディファイアを通じて使用する。
+/// Apply it through one of the `routing(...)` methods rather than constructing it directly.
 public struct RoutingModifier<
     Route: Routable,
     Sheet,
@@ -60,12 +57,10 @@ public struct RoutingModifier<
 }
 
 public extension View {
-    /// ルーティングコンポーネント（Router、Presenter 類）を環境に注入する。
+    /// Injects a router and every presenter into the environment.
     ///
-    /// すべてのルーティング機能を使用する場合は、このメソッドを使用して
-    /// 各 Presenter を環境値として設定する。
-    ///
-    /// # 使用例
+    /// Use this overload when a screen needs the full set; the shorter one covers navigation,
+    /// sheets, and alerts only.
     /// ```swift
     /// @State private var router = Router<AppRoute>()
     /// @State private var sheetPresenter = SheetPresenter<AppSheet>()
@@ -84,14 +79,13 @@ public extension View {
     /// ```
     ///
     /// - Parameters:
-    ///   - router: NavigationStack のルーター
-    ///   - sheetPresenter: シート表示管理
-    ///   - customHeightSheetPresenter: カスタム高さシート表示管理
-    ///   - fullScreenCoverPresenter: フルスクリーンカバー表示管理
-    ///   - alertPresenterOnNavigation: Navigation コンテキストのアラート表示管理
-    ///   - alertPresenterOnSheet: Sheet コンテキストのアラート表示管理
-    ///   - splitViewPresenter: SplitView 表示管理
-    /// - Returns: ルーティング環境が注入されたビュー
+    ///   - router: The navigation stack's router.
+    ///   - sheetPresenter: The presenter for sheets.
+    ///   - customHeightSheetPresenter: The presenter for sheets with explicit detents.
+    ///   - fullScreenCoverPresenter: The presenter for full-screen covers.
+    ///   - alertPresenterOnNavigation: The presenter for alerts raised from the navigation layer.
+    ///   - alertPresenterOnSheet: The presenter for alerts raised from inside a sheet.
+    ///   - splitViewPresenter: The presenter for split-view selection.
     func routing<Route: Routable, Sheet, CustomHeightSheet, FullScreenCover, Alert: Alertable, Sidebar: SidebarItem>(
         router: Router<Route>,
         sheetPresenter: SheetPresenter<Sheet>,
@@ -117,12 +111,10 @@ public extension View {
         ))
     }
 
-    /// ルーティングコンポーネントを環境に注入する（簡易版）。
+    /// Injects a router, a sheet presenter, and both alert presenters into the environment.
     ///
-    /// CustomHeightSheet と FullScreenCover が不要な場合に使用する簡易版。
-    /// 内部的には CustomHeightSheetPresenter<Never> と FullScreenCoverPresenter<Never> が設定される。
-    ///
-    /// # 使用例
+    /// Full-screen covers, custom-height sheets, and split views are filled in with `Never`,
+    /// so reaching for any of them later means switching to the full overload.
     /// ```swift
     /// @State private var router = Router<AppRoute>()
     /// @State private var sheetPresenter = SheetPresenter<AppSheet>()
@@ -138,11 +130,10 @@ public extension View {
     /// ```
     ///
     /// - Parameters:
-    ///   - router: NavigationStack のルーター
-    ///   - sheetPresenter: シート表示管理
-    ///   - alertPresenterOnNavigation: Navigation コンテキストのアラート表示管理
-    ///   - alertPresenterOnSheet: Sheet コンテキストのアラート表示管理
-    /// - Returns: ルーティング環境が注入されたビュー
+    ///   - router: The navigation stack's router.
+    ///   - sheetPresenter: The presenter for sheets.
+    ///   - alertPresenterOnNavigation: The presenter for alerts raised from the navigation layer.
+    ///   - alertPresenterOnSheet: The presenter for alerts raised from inside a sheet.
     func routing<Route: Routable, Sheet, Alert: Alertable>(
         router: Router<Route>,
         sheetPresenter: SheetPresenter<Sheet>,

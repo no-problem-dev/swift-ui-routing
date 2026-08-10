@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// TabPresenter用の環境値アクセスキー。
+/// The environment lookup for a tab presenter of a given tab type.
 ///
-/// `@Environment(.tab(AppTab.self))` の形式で TabPresenter にアクセスするために使う。
-///
-/// # 使用例
+/// Reading it is how a view deep inside one tab switches to another.
 /// ```swift
 /// struct ContentView: View {
 ///     @Environment(.tab(AppTab.self)) private var tabPresenter
@@ -24,10 +22,9 @@ public struct TabEnvironmentKey<Tab: Tabbable> {
 }
 
 public extension TabEnvironmentKey {
-    /// TabPresenter の環境値キーを生成する。
+    /// Builds the environment lookup for tab presenters of the given tab type.
     ///
-    /// - Parameter type: タブの型
-    /// - Returns: TabPresenter用の環境値キー
+    /// - Parameter type: The tab type whose presenter should be read.
     static func tab(_ type: Tab.Type) -> TabEnvironmentKey<Tab> {
         TabEnvironmentKey<Tab>()
     }

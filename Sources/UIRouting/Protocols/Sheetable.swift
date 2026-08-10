@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// シート表示可能な型を表すプロトコル
+/// A screen presented as a modal sheet.
 ///
-/// `Sheetable` に準拠した型は、`SheetPresenter` による型安全なシート管理に使用できる。
-/// `Identifiable` と `Hashable` の実装は自動的に提供される。
-///
-/// # 使用例
+/// Conformance is normally an enum, one case per sheet. `Identifiable` and `Hashable` come for
+/// free, so a case may carry the callback its sheet reports back through.
 /// ```swift
 /// enum AppSheet: Sheetable {
 ///     case filter
@@ -26,15 +24,13 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// # 注意
-/// - クロージャを含む associated value がある場合でも、`Hashable` 実装は不要
-/// - クロージャは自動的に無視され、case 名と Hashable 型の値のみで同一性が判定される
-/// - `id` プロパティの実装も不要（自動生成される）
+/// Identity comes from the case name plus its hashable associated values, so do not write
+/// `id`, `==`, or `hash(into:)` yourself — all three are provided.
 @MainActor
 public protocol Sheetable: Identifiable, Hashable {
     associatedtype Body: View
 
-    /// シートの内容ビュー
+    /// The view shown inside the sheet.
     @ViewBuilder var body: Body { get }
 }
 
@@ -57,19 +53,22 @@ public extension Sheetable where ID == String {
     }
 }
 
-// MARK: - Enum Mirror-based Hashable (クロージャを自動的に無視)
+// MARK: - Enum Mirror-based Hashable (closures ignored)
 public extension Sheetable {
-    /// enumのcase名とHashable型のassociated valueのみでハッシュ化（クロージャは無視）
+    /// Compares two values by case name and by their hashable associated values.
+    ///
+    /// Closure payloads are skipped, which is what lets a case carry a callback and still be
+    /// compared and hashed.
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         let lhsMirror = Mirror(reflecting: lhs)
         let rhsMirror = Mirror(reflecting: rhs)
 
-        // case名が異なれば不一致
+        // Different case names mean the values are not equal.
         guard lhsMirror.children.first?.label == rhsMirror.children.first?.label else {
             return false
         }
 
-        // associated valueを比較（Hashable型のみ、クロージャは無視）
+        // Compare associated values, hashable ones only.
         let lhsHashableValues = extractHashableValues(from: lhs)
         let rhsHashableValues = extractHashableValues(from: rhs)
 
@@ -79,10 +78,10 @@ public extension Sheetable {
     nonisolated func hash(into hasher: inout Hasher) {
         let mirror = Mirror(reflecting: self)
 
-        // case名をハッシュ
+        // Hash the case name.
         hasher.combine(mirror.children.first?.label ?? "")
 
-        // Hashable型のassociated valueのみハッシュ（クロージャは無視）
+        // Hash only the hashable associated values.
         let hashableValues = extractHashableValues(from: self)
         hasher.combine(hashableValues)
     }
@@ -95,7 +94,7 @@ public extension Sheetable {
 
         let valuesMirror = Mirror(reflecting: values)
         return valuesMirror.children.compactMap { child -> AnyHashable? in
-            // クロージャ型はAnyHashableに変換できないので自動的にフィルタされる
+            // Closures cannot be cast to AnyHashable, so they drop out here.
             child.value as? AnyHashable
         }
     }

@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// SheetPresenter用の環境値アクセスキー。
+/// The environment lookup for a sheet presenter of a given sheet type and layer.
 ///
-/// `@Environment(.sheet(Sheet.self))` の形式で SheetPresenter にアクセスするために使う。
-/// シート内からシートを開く場合は `@Environment(.sheet(Sheet.self, context: .sheet))` を使う。
+/// The sheet type and the layer together pick the presenter, so reading without a context from
+/// inside a sheet reaches the navigation layer's presenter instead of the sheet's own.
 ///
-/// # 使用例
 /// ```swift
-/// // 通常のシート表示
+/// // From the main content
 /// struct ContentView: View {
 ///     @Environment(.sheet(AppSheet.self)) private var sheetPresenter
 ///
@@ -18,7 +17,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // シート内からシートを開く
+/// // From inside a sheet
 /// struct SettingsSheet: View {
 ///     @Environment(.sheet(AppSheet.self, context: .sheet)) private var sheetPresenter
 ///
@@ -38,12 +37,11 @@ public struct SheetEnvironmentKey<Sheet> where Sheet: Identifiable & Hashable {
 }
 
 public extension SheetEnvironmentKey {
-    /// SheetPresenter の環境値キーを生成する。
+    /// Builds the environment lookup for sheet presenters of the given type.
     ///
     /// - Parameters:
-    ///   - type: シートの型
-    ///   - context: シートのコンテキスト（.navigation または .sheet）。デフォルトは .navigation
-    /// - Returns: SheetPresenter用の環境値キー
+    ///   - type: The sheet type whose presenter should be read.
+    ///   - context: The layer the presenter belongs to.
     static func sheet(_ type: Sheet.Type, context: PresentationContext = .navigation) -> SheetEnvironmentKey<Sheet> {
         SheetEnvironmentKey<Sheet>(context: context)
     }

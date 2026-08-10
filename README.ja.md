@@ -2,58 +2,35 @@
 
 # UIRouting
 
-SwiftUI 向けの型安全なルーティングライブラリ。
+SwiftUI の型安全なルーティング。画面遷移・シート・カバー・アラート・タブ・スプリットビューを 1 つのパターンで扱う。
 
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)
-![Platforms](https://img.shields.io/badge/Platforms-iOS%2017.0+%20%7C%20macOS%2014.0+-blue.svg)
+![Platforms](https://img.shields.io/badge/Platforms-iOS%2018.0+%20%7C%20macOS%2015.0+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-📚 **[完全なドキュメント](https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/)**
 
 ## 特徴
 
-```swift
-// 画面遷移
-router.navigate(to: .detail(id: "123"))
-
-// シート表示
-sheetPresenter.present(.settings)
-
-// アラート表示
-alertPresenter.present(.deleteConfirmation { /* ... */ })
-```
-
-- **型安全** — 全ての遷移をコンパイル時に検証
-- **簡潔** — `@Environment` で即座にアクセス
-- **完全対応** — Navigation, Sheet, FullScreenCover, CustomHeightSheet, Alert, Tab, SplitView
-
-## インストール
-
-```swift
-// Package.swift
-dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-ui-routing.git", from: "2.1.0")
-]
-```
-
-または Xcode: File > Add Package Dependencies > URL 入力。
+- **型安全** — 遷移先はすべて enum の case。コンパイル時に検証される
+- **どこからでも届く** — Router と Presenter は `@Environment` にあるので、深い階層のボタンからでも上位のビューを介さず遷移できる
+- **クロージャを持てる** — case がコールバックを持ったまま `Hashable` でいられる。`id` / `==` / `hash(into:)` は書かない
+- **全部同じ書き方** — NavigationStack, Sheet, FullScreenCover, CustomHeightSheet, Alert, TabView, NavigationSplitView
 
 ## 基本的な使い方
 
-### 1. ルート定義
+### 1. 遷移先を定義する
 
 ```swift
 enum AppRoute: Routable {
     case detail(id: String)
 
-    var id: String { "detail_\(id)" }
+    @ViewBuilder
     var body: some View { DetailView(id: id) }
 }
 
 enum AppSheet: Sheetable {
     case settings
 
-    var id: String { "settings" }
+    @ViewBuilder
     var body: some View { SettingsView() }
 }
 
@@ -78,7 +55,7 @@ enum AppAlert: Alertable {
 ### 2. セットアップ
 
 ```swift
-// App: Router・Presenter を作成して環境に注入する
+// Router と Presenter は一度だけ作って注入する。
 @main
 struct MyApp: App {
     @State private var router = Router<AppRoute>()
@@ -98,7 +75,7 @@ struct MyApp: App {
     }
 }
 
-// ContentView: NavigationStack のルートを設定する
+// NavigationStack はルーティングスコープが用意する。
 struct ContentView: View {
     var body: some View {
         HomeView()
@@ -107,7 +84,9 @@ struct ContentView: View {
 }
 ```
 
-### 3. ビューで使用
+AlertPresenter を 2 つ渡すのは、シートに覆われたビューから SwiftUI がアラートを出せないため。シート階層には専用のものが要る。
+
+### 3. ビューで使う
 
 ```swift
 struct HomeView: View {
@@ -123,7 +102,9 @@ struct HomeView: View {
 }
 ```
 
-## TabView 対応
+## TabView
+
+タブごとに Router を持つので、1 つのタブを深い画面に残したまま別のタブへ行き、戻ってきても元の場所のまま。
 
 ```swift
 enum AppTab: Tabbable {
@@ -132,6 +113,7 @@ enum AppTab: Tabbable {
     typealias Route = AppRoute
     typealias Sheet = AppSheet
 
+    @ViewBuilder
     var contentView: some View {
         switch self {
         case .home: HomeView()
@@ -139,6 +121,7 @@ enum AppTab: Tabbable {
         }
     }
 
+    @ViewBuilder
     var tabLabel: some View {
         switch self {
         case .home: Label("ホーム", systemImage: "house")
@@ -147,21 +130,16 @@ enum AppTab: Tabbable {
     }
 }
 
-// セットアップ
 @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
 
 TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
 ```
 
-**クロスタブナビゲーション**（別タブに切り替えて画面遷移）:
+タブ切り替えと画面遷移を一度に行う。コールバックは切り替えのアニメーションが終わってから走るので、push が飲み込まれない:
 
 ```swift
 @Environment(.tab(AppTab.self)) private var tabPresenter
 
-// タブ切り替え
-tabPresenter.select(.home)
-
-// タブ切り替え + 画面遷移
 tabPresenter.select(.home) { context in
     context.router.navigate(to: .detail(id: "123"))
 }
@@ -169,20 +147,16 @@ tabPresenter.select(.home) { context in
 
 ## モーダル表示
 
-### FullScreenCover（フルスクリーン）
+### FullScreenCover
+
+macOS にはフルスクリーンカバーが無いため、通常のシートとして表示される。
 
 ```swift
 enum AppFullScreenCover: FullScreenCoverable {
     case camera
     case editor(id: String)
 
-    var id: String {
-        switch self {
-        case .camera: return "camera"
-        case .editor(let id): return "editor_\(id)"
-        }
-    }
-
+    @ViewBuilder
     var body: some View {
         switch self {
         case .camera: CameraView()
@@ -191,13 +165,11 @@ enum AppFullScreenCover: FullScreenCoverable {
     }
 }
 
-// セットアップ: .routing() で環境に注入する
-@State private var fullScreenCoverPresenter = FullScreenCoverPresenter<AppFullScreenCover>()
-
+// 全部入りの routing で注入する。
 ContentView()
     .routing(
-        router: Router<AppRoute>(),
-        sheetPresenter: SheetPresenter<AppSheet>(),
+        router: router,
+        sheetPresenter: sheetPresenter,
         customHeightSheetPresenter: CustomHeightSheetPresenter<Never>(),
         fullScreenCoverPresenter: fullScreenCoverPresenter,
         alertPresenterOnNavigation: AlertPresenter<AppAlert>(),
@@ -205,25 +177,20 @@ ContentView()
         splitViewPresenter: SplitViewPresenter<Never>()
     )
 
-// ビューで使用
 @Environment(.fullScreenCover(AppFullScreenCover.self)) private var presenter
 presenter.present(.camera)
 ```
 
-### CustomHeightSheet（カスタム高さシート）
+### CustomHeightSheet
+
+高さは case 自身が持つので、呼び出し側は detent を書かない。
 
 ```swift
 enum AppCustomSheet: CustomHeightSheetable {
     case picker
     case quickAdd
 
-    var id: String {
-        switch self {
-        case .picker: return "picker"
-        case .quickAdd: return "quickAdd"
-        }
-    }
-
+    @ViewBuilder
     var body: some View {
         switch self {
         case .picker: PickerView()
@@ -239,27 +206,25 @@ enum AppCustomSheet: CustomHeightSheetable {
     }
 }
 
-// セットアップ
-@State private var presenter = CustomHeightSheetPresenter<AppCustomSheet>()
-
+// このモディファイアが Presenter の生成とシートの取り付けまで行う。
 ContentView()
-    .customHeightSheet(presenter: presenter)
+    .customHeightSheetPresenter(for: AppCustomSheet.self)
 
-// ビューで使用
-@Environment(.customHeightSheet(AppCustomSheet.self)) private var presenter
+@Environment(.customHeightSheet(AppCustomSheet.self, context: .sheet)) private var presenter
 presenter.present(.picker)
 ```
 
-## NavigationSplitView 対応
+## NavigationSplitView
 
 ### 2 カラム（サイドバー + 詳細）
 
 ```swift
-enum Sidebar: SidebarItem {
+enum Sidebar: String, SidebarItem {
     case inbox, sent
 
     typealias DetailRoute = MailRoute
 
+    var id: String { rawValue }
     var label: some View { Label("受信箱", systemImage: "tray") }
     var detail: some View { InboxView() }
 }
@@ -271,17 +236,20 @@ SplitViewRouting(splitViewPresenter: presenter, items: [.inbox, .sent])
 
 ### 3 カラム（サイドバー + リスト + 詳細）
 
+中央カラムと詳細カラムはそれぞれ別の Router を持つので、片方で push してももう片方は動かない。
+
 ```swift
-enum Sidebar: SidebarItem {
+enum Sidebar: String, SidebarItem {
     case inbox
 
-    typealias ContentItem = Email         // 中央カラムの選択可能アイテム
-    typealias ContentRoute = FilterRoute  // 中央カラム内のナビゲーション
-    typealias DetailRoute = MailRoute     // 詳細内のナビゲーション
+    typealias ContentItem = Email         // 中央カラムで選択するアイテム
+    typealias ContentRoute = FilterRoute  // 中央カラム内の push
+    typealias DetailRoute = MailRoute     // 詳細カラム内の push
 
+    var id: String { rawValue }
     var label: some View { Label("受信箱", systemImage: "tray") }
-    var contentView: some View { MailListView() }  // 中央カラム
-    var detail: some View { MailDetailView() }     // 詳細カラム
+    var contentView: some View { MailListView() }
+    var detail: some View { MailDetailView() }
 }
 
 @State private var presenter = SplitViewPresenter<Sidebar>(initialSelection: .inbox)
@@ -289,7 +257,7 @@ enum Sidebar: SidebarItem {
 ThreeColumnSplitViewRouting(splitViewPresenter: presenter, items: [.inbox])
 ```
 
-**中央カラムで選択されたアイテムを取得**:
+中央カラムの選択 Binding は自動で環境に入るので、そのまま `List` に渡す:
 
 ```swift
 @Environment(.selectedContentBinding(Email.self)) private var selectedContentBinding
@@ -301,43 +269,30 @@ List(selection: selectedContentBinding) {
 }
 ```
 
-## API 一覧
+## ドキュメント
 
-### Router
+API リファレンスとガイド:
+**[no-problem-dev.github.io/swift-ui-routing](https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/)**
 
-```swift
-router.navigate(to: .detail)    // 画面遷移
-router.back()                   // 戻る
-router.popToRoot()              // ルートへ
-router.replace(with: .profile)  // 置き換え
-```
+動かせるサンプル: [TodoExample](Examples/TodoExample)（画面遷移・シート・アラート・タブ・カバー）と
+[MailExample](Examples/MailExample)（3 カラムスプリットビュー）。
 
-### Presenter
+## インストール
 
 ```swift
-sheetPresenter.present(.settings)           // シート
-fullScreenCoverPresenter.present(.editor)   // フルスクリーン
-customHeightSheetPresenter.present(.picker) // カスタム高さシート
-alertPresenter.present(.error("エラー"))    // アラート
-tabPresenter.select(.search)                // タブ切り替え
-splitViewPresenter.select(.inbox)           // サイドバー選択
+// Package.swift
+dependencies: [
+    .package(url: "https://github.com/no-problem-dev/swift-ui-routing.git", from: "2.0.0")
+]
 ```
 
-## 実装例
-
-完全な実装例を参照:
-- **[TodoExample](Examples/TodoExample)** — Navigation, Sheet, Alert, TabView, FullScreenCover, CustomHeightSheet
-- **[MailExample](Examples/MailExample)** — 3 カラム NavigationSplitView
+Xcode の場合は File > Add Package Dependencies から URL を入力する。
 
 ## 要件
 
-- iOS 17.0+ / macOS 14.0+
+- iOS 18.0+ / macOS 15.0+
 - Swift 6.0+
 
 ## ライセンス
 
 MIT License — 詳細は [LICENSE](LICENSE) を参照。
-
-## サポート
-
-問題や機能リクエストは [GitHub Issues](https://github.com/no-problem-dev/swift-ui-routing/issues) へ。

@@ -1,13 +1,11 @@
 import SwiftUI
 
-/// Router と NavigationStack を連携させる ViewModifier。
+/// Binds an injected router to a navigation stack and wires alerts into every screen on it.
 ///
-/// Router の path を NavigationStack にバインドし、
-/// 各画面に自動的にアラート機能を適用する。
+/// The router comes from the environment, so one of the `routing(...)` methods must have run
+/// above this view.
 ///
-/// 通常は `.routingScope()` モディファイアを通じて使う。
-///
-/// # 使用例
+/// Apply it through `routingScope(for:alert:)`.
 /// ```swift
 /// ContentView()
 ///     .routingScope(for: Screen.self, alert: Alert.self)
@@ -34,14 +32,10 @@ public struct RoutingScopeModifier<Route: Routable, Alert: Alertable>: ViewModif
 }
 
 public extension View {
-    /// NavigationStack と Router を連携させ、ルーティングスコープを設定する。
+    /// Wraps the view in a navigation stack driven by the router already in the environment.
     ///
-    /// このモディファイアは以下を行う：
-    /// - Router の path を NavigationStack にバインド
-    /// - 各画面に `.routingAlert()` を自動適用
-    /// - `.navigationDestination()` で画面遷移先を設定
-    ///
-    /// # 使用例
+    /// Every screen it pushes gets the alert modifier applied, so an alert raised deep in the
+    /// stack still appears.
     /// ```swift
     /// struct RootView: View {
     ///     var body: some View {
@@ -52,9 +46,8 @@ public extension View {
     /// ```
     ///
     /// - Parameters:
-    ///   - for: ルーティング対象の型（Routable に準拠）
-    ///   - alert: アラートの型（Alertable に準拠）
-    /// - Returns: NavigationStack でラップされ、ルーティングが有効化されたビュー
+    ///   - for: The route type this stack navigates.
+    ///   - alert: The alert type wired into each screen.
     func routingScope<Route: Routable, Alert: Alertable>(for: Route.Type, alert: Alert.Type) -> some View {
         modifier(RoutingScopeModifier<Route, Alert>())
     }

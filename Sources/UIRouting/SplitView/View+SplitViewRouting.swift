@@ -1,12 +1,10 @@
 import SwiftUI
 
 extension View {
-    /// スプリットビューの詳細ビューにルーティング設定を自動適用する。
+    /// Applies the routing the sidebar type declares for its detail column.
     ///
-    /// SidebarItem の型から自動的にルーティング型を推論して適用する。
-    /// Router、SheetPresenter、AlertPresenter などが内部で自動生成される。
-    ///
-    /// # 使用例
+    /// The route, sheet, alert, and cover types are read off the sidebar type, so nothing has to
+    /// be named at the call site.
     /// ```swift
     /// enum MailSidebar: SidebarItem {
     ///     case inbox
@@ -22,8 +20,7 @@ extension View {
     /// }
     /// ```
     ///
-    /// - Parameter type: SidebarItem の型
-    /// - Returns: ルーティング機能が自動適用されたビュー
+    /// - Parameter type: The sidebar type whose routing types should be used.
     public func splitViewRouting<Sidebar>(for type: Sidebar.Type) -> some View where Sidebar: SidebarItem {
         modifier(
             SplitViewRoutingModifier<

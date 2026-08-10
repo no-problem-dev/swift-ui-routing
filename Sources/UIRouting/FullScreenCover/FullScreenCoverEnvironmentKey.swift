@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// FullScreenCoverPresenter用の環境値アクセスキー。
+/// The environment lookup for a full-screen cover presenter of a given type and layer.
 ///
-/// `@Environment(.fullScreenCover(Cover.self))` の形式で FullScreenCoverPresenter にアクセスするために使用する。
-/// シート内からフルスクリーンカバーを開く場合は `@Environment(.fullScreenCover(Cover.self, context: .sheet))` を使用する。
+/// The cover type and the layer together pick the presenter, so reading without a context from
+/// inside a sheet reaches the navigation layer's presenter instead of the sheet's own.
 ///
-/// # 使用例
 /// ```swift
-/// // 通常のフルスクリーンカバー表示
+/// // From the main content
 /// struct ContentView: View {
 ///     @Environment(.fullScreenCover(AppCover.self)) private var presenter
 ///
@@ -18,7 +17,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // シート内からフルスクリーンカバーを開く
+/// // From inside a sheet
 /// struct SettingsSheet: View {
 ///     @Environment(.fullScreenCover(AppCover.self, context: .sheet)) private var presenter
 ///
@@ -38,12 +37,11 @@ public struct FullScreenCoverEnvironmentKey<Cover> where Cover: Identifiable & H
 }
 
 public extension FullScreenCoverEnvironmentKey {
-    /// FullScreenCoverPresenter の環境値キーを生成する。
+    /// Builds the environment lookup for cover presenters of the given type.
     ///
     /// - Parameters:
-    ///   - type: フルスクリーンカバーの型
-    ///   - context: シートのコンテキスト（.navigation または .sheet）。デフォルトは .navigation
-    /// - Returns: FullScreenCoverPresenter用の環境値キー
+    ///   - type: The cover type whose presenter should be read.
+    ///   - context: The layer the presenter belongs to.
     static func fullScreenCover(_ type: Cover.Type, context: PresentationContext = .navigation) -> FullScreenCoverEnvironmentKey<Cover> {
         FullScreenCoverEnvironmentKey<Cover>(context: context)
     }

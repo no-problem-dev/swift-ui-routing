@@ -2,9 +2,10 @@ import SwiftUI
 
 // MARK: - Conditional Presentation Modifier
 
-/// Sheet が必要な場合のみ適用する内部用 Modifier。
+/// Attaches the sheet modifier only when the sheet type is not `Never`.
 ///
-/// Sheet 型が Never でない場合のみ、シート表示機能を適用する。
+/// Lets the routing modifiers stay uniform while a screen that declares no sheets pays nothing
+/// for the machinery.
 struct SheetModifierIfNeeded<Sheet: Sheetable>: ViewModifier {
     @Bindable var presenter: SheetPresenter<Sheet>
     @Environment(\.self) private var environment
@@ -14,7 +15,7 @@ struct SheetModifierIfNeeded<Sheet: Sheetable>: ViewModifier {
             content.sheet(item: $presenter.presentedSheet) { sheet in
                 sheet.body
                     .transformEnvironment(\.self) { env in
-                        // シート内にも同じ SheetPresenter を引き継ぐ
+                        // Carry the same presenter into the sheet so its content can dismiss itself.
                         env[sheetPresenter: SheetPresenterSpecifier<Sheet>(context: .navigation)] = presenter
                     }
             }
@@ -27,35 +28,28 @@ struct SheetModifierIfNeeded<Sheet: Sheetable>: ViewModifier {
 // MARK: - Public Sheet Presenter Modifier
 
 public extension View {
-    /// シートプレゼンターを有効化するモディファイア
+    /// Creates a sheet presenter, publishes it, and attaches the sheet modifier for it.
     ///
-    /// 指定した `context` に応じて SheetPresenter を環境に注入し、
-    /// `.sheet(item:)` による表示を自動設定する。
+    /// Choose the context by where the presentation is triggered from. `.navigation` is for a
+    /// screen managing its own sheets, read back as `@Environment(.sheet(AppSheet.self))`;
+    /// `.sheet` is for opening a second sheet from inside the first, read back as
+    /// `@Environment(.sheet(AppSheet.self, context: .sheet))`.
     ///
-    /// # コンテキストの使い分け
-    /// - `.navigation`（デフォルト）: NavigationStack のルートなど、
-    ///   ThreeColumnSplitViewRouting を使わない画面で独立したシート管理を行う場合。
-    ///   `@Environment(.sheet(AppSheet.self))` でアクセス。
-    /// - `.sheet`: シート内から別のシートを開く場合。
-    ///   `@Environment(.sheet(AppSheet.self, context: .sheet))` でアクセス。
-    ///
-    /// # 使用例
     /// ```swift
-    /// // iPhone の NavigationStack ルートで使用
+    /// // At the root of a navigation stack
     /// NavigationStack {
     ///     ContentView()
     /// }
     /// .sheetPresenter(for: AppSheet.self)
     ///
-    /// // シート内から別シートを表示
+    /// // From inside a sheet
     /// SettingsSheet()
     ///     .sheetPresenter(for: AppSheet.self, context: .sheet)
     /// ```
     ///
     /// - Parameters:
-    ///   - type: シートの型
-    ///   - context: プレゼンテーションコンテキスト。デフォルトは `.navigation`
-    /// - Returns: シートプレゼンターが有効化されたビュー
+    ///   - type: The sheet type this presenter handles.
+    ///   - context: The layer the sheet is presented from.
     func sheetPresenter<Sheet: Sheetable>(
         for type: Sheet.Type,
         context: PresentationContext = .navigation
@@ -64,7 +58,7 @@ public extension View {
     }
 }
 
-/// シートプレゼンターを有効化する Modifier
+/// Owns a sheet presenter and attaches the sheet modifier for it.
 struct SheetPresenterModifier<Sheet: Sheetable>: ViewModifier {
     let context: PresentationContext
     @State private var presenter = SheetPresenter<Sheet>()
@@ -77,7 +71,7 @@ struct SheetPresenterModifier<Sheet: Sheetable>: ViewModifier {
             .sheet(item: $bindablePresenter.presentedSheet) { sheet in
                 sheet.body
                     .transformEnvironment(\.self) { env in
-                        // シート内にも同じ SheetPresenter を引き継ぐ
+                        // Carry the same presenter into the sheet so its content can dismiss itself.
                         env[sheetPresenter: SheetPresenterSpecifier<Sheet>(context: context)] = presenter
                     }
             }

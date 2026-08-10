@@ -1,12 +1,9 @@
 import SwiftUI
 
 extension View {
-    /// 3カラムスプリットビューのコンテンツビューにルーティング設定を自動適用する。
+    /// Applies the routing the sidebar type declares for its middle column.
     ///
-    /// SidebarItem の型から自動的にルーティング型を推論して適用する。
-    /// Router、SheetPresenter、AlertPresenter などが内部で自動生成される。
-    ///
-    /// # 使用例
+    /// Pushes made here stay inside the middle column, because it routes with `ContentRoute`.
     /// ```swift
     /// enum MailSidebar: SidebarItem {
     ///     case inbox
@@ -23,8 +20,7 @@ extension View {
     /// }
     /// ```
     ///
-    /// - Parameter type: SidebarItem の型
-    /// - Returns: ルーティング機能が自動適用されたビュー
+    /// - Parameter type: The sidebar type whose routing types should be used.
     public func threeColumnContentRouting<Sidebar>(for type: Sidebar.Type) -> some View where Sidebar: SidebarItem {
         modifier(
             ThreeColumnContentRoutingModifier<
@@ -38,12 +34,9 @@ extension View {
         )
     }
 
-    /// 3カラムスプリットビューの詳細ビューにルーティング設定を自動適用する。
+    /// Applies the routing the sidebar type declares for its detail column.
     ///
-    /// SidebarItem の型から自動的にルーティング型を推論して適用する。
-    /// Router、SheetPresenter、AlertPresenter などが内部で自動生成される。
-    ///
-    /// # 使用例
+    /// Pushes made here stay inside the detail column, because it routes with `DetailRoute`.
     /// ```swift
     /// enum MailSidebar: SidebarItem {
     ///     case inbox
@@ -60,8 +53,7 @@ extension View {
     /// }
     /// ```
     ///
-    /// - Parameter type: SidebarItem の型
-    /// - Returns: ルーティング機能が自動適用されたビュー
+    /// - Parameter type: The sidebar type whose routing types should be used.
     public func threeColumnDetailRouting<Sidebar>(for type: Sidebar.Type) -> some View where Sidebar: SidebarItem {
         modifier(
             ThreeColumnDetailRoutingModifier<

@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// Router用の環境値アクセスキー。
+/// The environment lookup for a router of a given route type.
 ///
-/// `@Environment(.router(Screen.self))` の形式で Router にアクセスするために使う。
-///
-/// # 使用例
+/// A view reads it as `@Environment(.router(Screen.self))`; the route type is what picks the
+/// right router out of the environment.
 /// ```swift
 /// struct ContentView: View {
 ///     @Environment(.router(Screen.self)) private var router
@@ -24,10 +23,9 @@ public struct RouterEnvironmentKey<Route: Routable> {
 }
 
 public extension RouterEnvironmentKey {
-    /// Router の環境値キーを生成する。
+    /// Builds the environment lookup for routers of the given route type.
     ///
-    /// - Parameter type: ルーティング対象の型
-    /// - Returns: Router用の環境値キー
+    /// - Parameter type: The route type whose router should be read.
     static func router(_ type: Route.Type) -> RouterEnvironmentKey<Route> {
         RouterEnvironmentKey<Route>()
     }

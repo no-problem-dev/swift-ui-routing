@@ -1,15 +1,11 @@
 import SwiftUI
 
-/// Router と NavigationStack を自己完結で連携させる ViewModifier。
+/// Creates a navigation stack together with the router that drives it.
 ///
-/// `RoutingScopeModifier` と異なり `Alertable` 型を必要とせず、
-/// Router 単体でのナビゲーション管理を可能にする。
-/// `SheetPresenterModifier` と同じ「自己完結型」パターンで、
-/// Router の作成・NavigationStack バインディング・環境注入を一括で行う。
+/// It owns the router, so nothing has to be injected first. Reach for it when a screen needs
+/// navigation but no alerts.
 ///
-/// 通常は `.routerScope()` モディファイアを通じて使用する。
-///
-/// # 使用例
+/// Apply it through `routerScope(for:)`.
 /// ```swift
 /// ContentView()
 ///     .routerScope(for: AppRoute.self)
@@ -33,18 +29,11 @@ struct RouterScopeModifier<Route: Routable>: ViewModifier {
 }
 
 public extension View {
-    /// NavigationStack と Router を自己完結で連携させるモディファイア。
+    /// Wraps the view in a navigation stack whose router it creates and owns.
     ///
-    /// `routingScope(for:alert:)` と異なり `Alertable` 型を必要とせず、
-    /// Router のみでナビゲーションを管理したい場合に使用する。
-    ///
-    /// 内部で以下を行う：
-    /// - `Router<Route>` の生成と `@State` での保持
-    /// - `NavigationStack(path:)` へのバインド
-    /// - `.navigationDestination(for:)` の登録
-    /// - `transformEnvironment` による Router の環境注入
-    ///
-    /// # 使用例
+    /// It builds the router, holds it in `@State`, binds it to the stack, registers the
+    /// destinations, and publishes it to the environment. Unlike `routingScope(for:alert:)`
+    /// it needs no alert type.
     /// ```swift
     /// struct RootView: View {
     ///     var body: some View {
@@ -55,8 +44,7 @@ public extension View {
     /// }
     /// ```
     ///
-    /// - Parameter type: ルーティング対象の型（Routable に準拠）
-    /// - Returns: NavigationStack でラップされ、ルーティングが有効化されたビュー
+    /// - Parameter type: The route type this stack navigates.
     func routerScope<Route: Routable>(for type: Route.Type) -> some View {
         modifier(RouterScopeModifier<Route>())
     }

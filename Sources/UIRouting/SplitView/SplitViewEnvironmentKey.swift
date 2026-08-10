@@ -1,10 +1,8 @@
 import SwiftUI
 
-/// SplitViewPresenter用の環境値アクセスキー。
+/// The environment lookup for a split-view presenter of a given sidebar type.
 ///
-/// `@Environment(.splitView(AppSidebar.self))` の形式で SplitViewPresenter にアクセスするために使う。
-///
-/// # 使用例
+/// Reading it is how a view inside any column changes the sidebar selection.
 /// ```swift
 /// struct ContentView: View {
 ///     @Environment(.splitView(AppSidebar.self)) private var splitViewPresenter
@@ -24,10 +22,9 @@ public struct SplitViewEnvironmentKey<Sidebar: SidebarItem> {
 }
 
 public extension SplitViewEnvironmentKey {
-    /// SplitViewPresenter の環境値キーを生成する。
+    /// Builds the environment lookup for split-view presenters of the given sidebar type.
     ///
-    /// - Parameter type: サイドバー項目の型
-    /// - Returns: SplitViewPresenter用の環境値キー
+    /// - Parameter type: The sidebar type whose presenter should be read.
     static func splitView(_ type: Sidebar.Type) -> SplitViewEnvironmentKey<Sidebar> {
         SplitViewEnvironmentKey<Sidebar>()
     }
@@ -39,17 +36,16 @@ public extension Environment {
     }
 }
 
-/// SelectedContentBinding用の環境値アクセスキー。
+/// The environment lookup for the middle column's selection binding.
 ///
-/// 3カラムNavigationSplitViewの中央カラムで選択されたアイテムへのBindingを取得する。
-/// `@Environment(.selectedContentBinding(YourContentItem.self))` の形式で使う。
+/// Pass it straight to `List(selection:)` in the middle column. The three-column split view
+/// installs it, so the list and the presenter stay in step with no glue code.
 ///
-/// # 使用例
 /// ```swift
-/// // ContentItemの型を定義
+/// // The type the middle column selects
 /// struct Email: Selectable { /* ... */ }
 ///
-/// // 中央カラムのビューで使用
+/// // Used by the middle column's view
 /// struct MailListView: View {
 ///     @Environment(.selectedContentBinding(Email.self)) private var selectedContentBinding
 ///
@@ -64,10 +60,6 @@ public extension Environment {
 ///     }
 /// }
 /// ```
-///
-/// # 注意
-/// - このBindingは`ThreeColumnSplitViewRouting`によって自動的に環境に注入される
-/// - 利用者が手動でBindingを作成する必要はない
 public struct SelectedContentBindingEnvironmentKey<ContentItem: Selectable> {
     fileprivate let specifier: SelectedContentBindingSpecifier<ContentItem>
     fileprivate init() {
@@ -76,10 +68,9 @@ public struct SelectedContentBindingEnvironmentKey<ContentItem: Selectable> {
 }
 
 public extension SelectedContentBindingEnvironmentKey {
-    /// SelectedContentBinding の環境値キーを生成する。
+    /// Builds the environment lookup for the selection binding of the given item type.
     ///
-    /// - Parameter type: コンテンツアイテムの型
-    /// - Returns: SelectedContentBinding用の環境値キー
+    /// - Parameter type: The type the middle column selects.
     static func selectedContentBinding(_ type: ContentItem.Type) -> SelectedContentBindingEnvironmentKey<ContentItem> {
         SelectedContentBindingEnvironmentKey<ContentItem>()
     }

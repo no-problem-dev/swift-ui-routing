@@ -1,11 +1,10 @@
 import SwiftUI
 
 extension View {
-    /// タブのルーティング設定を自動適用
+    /// Applies the routing this tab's type declares.
     ///
-    /// タブの型から自動的にルーティング型を推論して適用する。
-    ///
-    /// # 使用例
+    /// The route, sheet, alert, and cover types are read off the tab type, so nothing has to be
+    /// named at the call site. `TabRouting` already does this for the tabs it builds.
     /// ```swift
     /// struct TodoListTab: Tabbable {
     ///     typealias Route = AppRoute
@@ -17,11 +16,11 @@ extension View {
     ///     }
     /// }
     ///
-    /// // ルーティング設定が自動適用される
+    /// // Routing comes from the tab's own type declarations.
     /// TodoListTab().contentView.tabRouting(tab: TodoListTab())
     /// ```
     ///
-    /// - Parameter tab: 現在のタブ
+    /// - Parameter tab: The tab this view belongs to.
     public func tabRouting<Tab>(
         tab: Tab
     ) -> some View where Tab: Tabbable {

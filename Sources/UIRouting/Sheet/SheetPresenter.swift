@@ -1,10 +1,12 @@
 import SwiftUI
 
-/// モーダルシートの表示を管理する型安全なプレゼンター
+/// Presents modal sheets of one type.
 ///
-/// # 使用例
+/// It holds at most one sheet, so presenting a second one replaces the first rather than
+/// stacking on top of it.
+///
 /// ```swift
-/// // 1. シート画面を定義
+/// // 1. Define the sheets.
 /// enum Sheet: Identifiable, Hashable {
 ///     case settings
 ///     case profile(userId: String)
@@ -25,7 +27,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // 2. SheetPresenterインスタンスを作成してEnvironmentに注入
+/// // 2. Create the presenter and inject it into the environment.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -34,7 +36,7 @@ import SwiftUI
 ///         alertPresenterOnSheet: AlertPresenter<Alert>()
 ///     )
 ///
-/// // 3. .sheet()モディファイアを設定
+/// // 3. Attach the sheet modifier.
 /// var body: some View {
 ///     @Bindable var sheet = sheetPresenter
 ///
@@ -44,12 +46,12 @@ import SwiftUI
 ///         }
 /// }
 ///
-/// // 4. シートを表示
+/// // 4. Present a sheet.
 /// struct MainView: View {
 ///     @Environment(.sheet(Sheet.self)) private var sheetPresenter
 ///
 ///     var body: some View {
-///         Button("設定") {
+///         Button("Settings") {
 ///             sheetPresenter.present(.settings)
 ///         }
 ///     }
@@ -58,16 +60,17 @@ import SwiftUI
 @MainActor
 @Observable
 public final class SheetPresenter<Sheet> where Sheet: Sheetable {
+    /// The sheet currently up, or `nil` when none is.
     public var presentedSheet: Sheet?
 
     public init() {}
 
-    /// 指定したシートを表示
+    /// Puts a sheet up.
     public func present(_ sheet: Sheet) {
         presentedSheet = sheet
     }
 
-    /// 表示中のシートを閉じる
+    /// Takes the current sheet down.
     public func dismiss() {
         presentedSheet = nil
     }

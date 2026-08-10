@@ -1,13 +1,8 @@
 import SwiftUI
 
-/// TabPresenter と TabView を連携させる ViewModifier（iOS 26 宣言型 `Tab(value:role:)` API）。
+/// Builds a tab view from a presenter already in the environment and a list of tabs.
 ///
-/// TabPresenter の selectedTab を TabView にバインドし、
-/// 各タブに自動的にルーティング機能を適用する。
-///
-/// 通常は `TabRouting` 構造体を通じて使う。
-///
-/// # 使用例
+/// Prefer the `TabRouting` view, which owns the presenter and publishes it for you.
 /// ```swift
 /// @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
 ///
@@ -40,17 +35,13 @@ public struct TabScopeModifier<Tab: Tabbable>: ViewModifier {
     }
 }
 
-/// タブベースのルーティングを簡単に構築するためのビュー（iOS 26 Liquid Glass 対応）。
+/// A tab view whose tabs each arrive with their own routing already wired up.
 ///
-/// TabPresenter を使ってタブの選択状態を管理し、
-/// 各タブに自動的にルーティング機能（Router、SheetPresenter など）を適用する。
+/// It is built on the declarative `Tab(value:role:)` API, so Liquid Glass modifiers such as
+/// `tabViewBottomAccessory(_:)`, `tabBarMinimizeBehavior(_:)`, `tabViewStyle(_:)`, and
+/// `badge(_:)` can be chained straight onto it.
 ///
-/// 内部では iOS 26 宣言型 `SwiftUI.Tab(value:role:)` API を使って構築するため、
-/// `.tabViewBottomAccessory` / `.tabBarMinimizeBehavior(_:)` / `.tabViewStyle(.sidebarAdaptable)` /
-/// `TabSection` / `.badge(_:)` などの Liquid Glass 系モディファイアを
-/// そのまま呼び出し側で `TabRouting(...)` にチェーンできる。
-///
-/// # 使用例（フラットな 4 タブ）
+/// A flat set of tabs:
 /// ```swift
 /// struct ContentView: View {
 ///     @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
@@ -65,7 +56,7 @@ public struct TabScopeModifier<Tab: Tabbable>: ViewModifier {
 /// }
 /// ```
 ///
-/// # 使用例（content ビルダーで各タブの描画をカスタマイズ）
+/// Customising how each tab is drawn:
 /// ```swift
 /// TabRouting(tabPresenter: tabPresenter, tabs: AppTab.allCases) { tab in
 ///     switch tab {
@@ -75,20 +66,19 @@ public struct TabScopeModifier<Tab: Tabbable>: ViewModifier {
 /// }
 /// ```
 ///
-/// ルーティング設定 (Router / SheetPresenter / AlertPresenter / NavigationStack) は
-/// content ビルダー内部で自動付与されるため、呼び出し側は純粋にビュー組み立てだけを記述できる。
+/// The router, presenters, and navigation stack are added around whatever the builder returns,
+/// so the closure only has to describe the tab's own view.
 public struct TabRouting<Tab: Tabbable, Content: View>: View {
     @Bindable private var tabPresenter: TabPresenter<Tab>
     private let tabs: [Tab]
     private let content: (Tab) -> Content
 
-    /// タブルーティングを初期化する。
+    /// Creates a tab view with a custom builder for each tab's content.
     ///
     /// - Parameters:
-    ///   - tabPresenter: タブの選択状態を管理する TabPresenter
-    ///   - tabs: 表示するタブの配列
-    ///   - content: 各タブのコンテンツを生成するビルダー。内部で `.tabRouting(tab:)` が
-    ///     自動適用されるため、Router / Sheet / Alert の設定は呼び出し側で記述不要。
+    ///   - tabPresenter: Holds which tab is selected and each tab's router.
+    ///   - tabs: The tabs to show, in bar order.
+    ///   - content: Builds one tab's view. Routing is added around whatever it returns.
     public init(
         tabPresenter: TabPresenter<Tab>,
         tabs: [Tab],
@@ -119,9 +109,7 @@ public struct TabRouting<Tab: Tabbable, Content: View>: View {
 // MARK: - Convenience init (default content: tab.contentView)
 
 public extension TabRouting {
-    /// 各タブのコンテンツを `tab.contentView` で描画する簡易イニシャライザ。
-    ///
-    /// `Tabbable.contentView` をそのまま使う典型ケース向けのショートカット。
+    /// Creates a tab view that draws each tab with the view the tab itself declares.
     init(
         tabPresenter: TabPresenter<Tab>,
         tabs: [Tab]

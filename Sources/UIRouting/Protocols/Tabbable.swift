@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// タブの定義を表すプロトコル。
+/// A tab, together with the routing types its own navigation stack uses.
 ///
-/// `Tabbable` に準拠した型は、TabView による型安全なタブ管理に使用できる。
-/// `Identifiable` と `Hashable` の実装は自動的に提供される。
-///
-/// # 使用例
+/// Each tab keeps a separate stack, so pushing in one leaves the others where they were.
+/// Routing types left unspecified default to `Never`, which switches that feature off.
 /// ```swift
 /// enum AppTab: Tabbable {
 ///     case home
@@ -27,42 +25,38 @@ import SwiftUI
 ///     var tabLabel: some View {
 ///         switch self {
 ///         case .home:
-///             Label("ホーム", systemImage: "house")
+///             Label("Home", systemImage: "house")
 ///         case .settings:
-///             Label("設定", systemImage: "gearshape")
+///             Label("Settings", systemImage: "gearshape")
 ///         }
 ///     }
 /// }
 /// ```
 ///
-/// # 注意
-/// - `id` プロパティの実装は不要（自動生成される）
-/// - `Hashable` の実装も不要（自動提供される）
-/// - ルーティング不要な場合は型宣言省略可能（デフォルトで `Never`）
+/// Do not write `id` or `hash(into:)`; both are provided.
 @MainActor
 public protocol Tabbable<Route>: Hashable, Identifiable {
-    // View 関連
+    // Views
     associatedtype ContentView: View
     associatedtype TabLabel: View
 
-    // ルーティング型（Primary Associated Type - デフォルトは Never）
+    // Routing types; Route is the primary associated type
     associatedtype Route: Routable = Never
     associatedtype Sheet: Sheetable = Never
     associatedtype Alert: Alertable = Never
     associatedtype FullScreen: FullScreenCoverable = Never
     associatedtype CustomSheet: CustomHeightSheetable = Never
 
-    /// タブの内容ビュー
+    /// The root view of this tab's navigation stack.
     @ViewBuilder var contentView: ContentView { get }
 
-    /// タブアイテムのラベル
+    /// The item drawn in the tab bar.
     @ViewBuilder var tabLabel: TabLabel { get }
 
-    /// iOS 26 Liquid Glass 用のタブロール (`.search` など)。
+    /// The system role of this tab, or `nil` for an ordinary one.
     ///
-    /// デフォルトは `nil`（標準タブ）。検索専用タブなどに `.search` を返すと、
-    /// システムがロールに応じた UI（検索タブの常駐配置、Liquid Glass エフェクトの
-    /// 最適化、サイドバー適応時の役割分類）を自動的に適用する。
+    /// Returning `.search` lets the system pin the tab, tune its Liquid Glass treatment, and
+    /// classify it correctly when the tab bar adapts into a sidebar.
     var tabRole: TabRole? { get }
 }
 
@@ -88,6 +82,6 @@ public extension Tabbable where ID == String {
 // MARK: - tabRole default
 
 public extension Tabbable {
-    /// デフォルトでは通常タブ（ロールなし）。検索タブのみ `.search` を返すように上書きする。
+    /// Treats every tab as ordinary; override it on a search tab to return `.search`.
     var tabRole: TabRole? { nil }
 }

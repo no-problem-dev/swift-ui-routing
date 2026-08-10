@@ -1,12 +1,10 @@
 import SwiftUI
 
-/// タブのルーティング設定を自動化する ViewModifier。
+/// Gives one tab its own router, presenters, and navigation stack.
 ///
-/// 各タブに対して Router、SheetPresenter、AlertPresenter などのルーティングコンポーネントを
-/// 自動的に設定し、NavigationStack との連携も行う。
-/// タブごとに独立したルーティングスタックを持てる。
+/// Every tab gets a fresh set, which is what keeps one tab's stack and sheets out of another's.
 ///
-/// 通常は `.tabRouting(tab:)` モディファイアを通じて使う。
+/// Apply it through `tabRouting(tab:)`.
 public struct TabRoutingModifier<
     Tab: Tabbable,
     Route: Routable,
@@ -20,7 +18,7 @@ public struct TabRoutingModifier<
 
     private let currentTab: Tab
 
-    // 各Presenterを内部で管理
+    // Presenters owned by this scope.
     @State private var router = Router<Route>()
     @State private var sheetPresenter = SheetPresenter<Sheet>()
     @State private var alertPresenterOnNavigation = AlertPresenter<Alert>()
@@ -35,9 +33,9 @@ public struct TabRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // NavigationStack を条件分岐で適用
+            // A navigation stack, but only if this tab declares routes.
             .modifier(NavigationScopeModifierIfNeeded<Tab, Route, Alert>(tab: currentTab))
-            // 既存のroutingモディファイアを適用
+            // Publish everything to the environment.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -47,13 +45,13 @@ public struct TabRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: SplitViewPresenter<Never>()
             )
-            // Sheetの自動適用
+            // Sheets.
             .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // FullScreenCoverの自動適用
+            // Full-screen covers.
             .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // CustomHeightSheetの自動適用
+            // Custom-height sheets.
             .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
-            // TabPresenterとの統合: Routerを登録
+            // Let the presenter reach this tab's router from anywhere else.
             .onAppear {
                 tabPresenter.registerRouter(router, for: currentTab)
             }
@@ -62,9 +60,9 @@ public struct TabRoutingModifier<
 
 // MARK: - Conditional Modifiers
 
-/// NavigationStack を条件分岐で適用する内部用 Modifier。
+/// Wraps a tab in a navigation stack only when it declares a route type.
 ///
-/// タブの Route 型が Never でない場合は NavigationStack を適用する。
+/// A tab with no routes stays a plain view, so it gets no navigation bar it never asked for.
 private struct NavigationScopeModifierIfNeeded<
     Tab: Tabbable,
     Route: Routable,
@@ -74,10 +72,8 @@ private struct NavigationScopeModifierIfNeeded<
 
     func body(content: Content) -> some View {
         if Tab.Route.self != Never.self {
-            // NavigationStack を使用
             content.routingScope(for: Route.self, alert: Alert.self)
         } else {
-            // 使用しない
             content
         }
     }

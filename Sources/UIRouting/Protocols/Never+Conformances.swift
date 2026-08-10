@@ -2,10 +2,8 @@ import SwiftUI
 
 // MARK: - Never Conformances
 
-/// すべてのプレゼンテーションプロトコルに対するNever型の準拠を提供
-///
-/// Never 型をデフォルト値として使用可能にするため、各プロトコルに準拠させる。
-/// 実際には呼び出されることのない実装で、型システム上の要求を満たすためのもの。
+// `Never` conforms to every presentation protocol so that a routing slot can be switched off
+// by writing `Never` for it. None of these implementations is ever reached.
 
 extension Never: Routable {
     public var body: Never { fatalError() }

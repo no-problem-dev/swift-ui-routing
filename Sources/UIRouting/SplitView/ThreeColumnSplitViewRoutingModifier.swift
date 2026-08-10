@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// 3カラムSplitView のコンテンツビューに対してルーティング設定を自動化する ViewModifier。
+/// Gives the middle column of a three-column split view its presenters and alert handling.
 ///
-/// コンテンツビューに対して Router、SheetPresenter、AlertPresenter などのルーティングコンポーネントを
-/// 自動的に設定する。
+/// It routes with `ContentRoute`, so pushes stay inside the middle column instead of taking
+/// over the detail column.
 ///
-/// 通常は `.threeColumnContentRouting()` モディファイアを通じて使う。
+/// Apply it through `threeColumnContentRouting(for:)`.
 public struct ThreeColumnContentRoutingModifier<
     Sidebar: SidebarItem,
     Route: Routable,
@@ -18,7 +18,7 @@ public struct ThreeColumnContentRoutingModifier<
     @Environment private var splitViewPresenter: SplitViewPresenter<Sidebar>
     @Environment private var router: Router<Route>
 
-    // 各Presenterを内部で管理
+    // Presenters owned by this scope.
     @State private var sheetPresenter = SheetPresenter<Sheet>()
     @State private var alertPresenterOnNavigation = AlertPresenter<Alert>()
     @State private var alertPresenterOnSheet = AlertPresenter<Alert>()
@@ -32,7 +32,7 @@ public struct ThreeColumnContentRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // Presenterを環境に注入
+            // Publish them to the environment.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -42,23 +42,22 @@ public struct ThreeColumnContentRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: splitViewPresenter
             )
-            // Sheetの自動適用
+            // Sheets.
             .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // FullScreenCoverの自動適用
+            // Full-screen covers.
             .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // CustomHeightSheetの自動適用
+            // Custom-height sheets.
             .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
-            // Alertの自動適用
+            // Alerts.
             .modifier(AlertModifierIfNeeded(presenter: alertPresenterOnNavigation))
     }
 }
 
-/// 3カラムSplitView の詳細ビューに対してルーティング設定を自動化する ViewModifier。
+/// Gives the detail column of a three-column split view its presenters and alert handling.
 ///
-/// 詳細ビューに対して Router、SheetPresenter、AlertPresenter などのルーティングコンポーネントを
-/// 自動的に設定する。
+/// It routes with `DetailRoute`, keeping its stack separate from the middle column's.
 ///
-/// 通常は `.threeColumnDetailRouting()` モディファイアを通じて使う。
+/// Apply it through `threeColumnDetailRouting(for:)`.
 public struct ThreeColumnDetailRoutingModifier<
     Sidebar: SidebarItem,
     Route: Routable,
@@ -71,7 +70,7 @@ public struct ThreeColumnDetailRoutingModifier<
     @Environment private var splitViewPresenter: SplitViewPresenter<Sidebar>
     @Environment private var router: Router<Route>
 
-    // 各Presenterを内部で管理
+    // Presenters owned by this scope.
     @State private var sheetPresenter = SheetPresenter<Sheet>()
     @State private var alertPresenterOnNavigation = AlertPresenter<Alert>()
     @State private var alertPresenterOnSheet = AlertPresenter<Alert>()
@@ -85,7 +84,7 @@ public struct ThreeColumnDetailRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // Presenterを環境に注入
+            // Publish them to the environment.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -95,13 +94,13 @@ public struct ThreeColumnDetailRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: splitViewPresenter
             )
-            // Sheetの自動適用
+            // Sheets.
             .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // FullScreenCoverの自動適用
+            // Full-screen covers.
             .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // CustomHeightSheetの自動適用
+            // Custom-height sheets.
             .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
-            // Alertの自動適用
+            // Alerts.
             .modifier(AlertModifierIfNeeded(presenter: alertPresenterOnNavigation))
     }
 }

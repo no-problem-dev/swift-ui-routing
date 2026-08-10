@@ -1,13 +1,11 @@
 import SwiftUI
 
-/// SplitViewPresenter と NavigationSplitView を連携させる ViewModifier。
+/// Binds an injected split-view presenter to a navigation split view and wires alerts in.
 ///
-/// SplitViewPresenter の選択状態を NavigationSplitView にバインドし、
-/// 各詳細ビューに自動的にアラート機能を適用する。
+/// Everything it uses comes from the environment, so one of the `routing(...)` methods must have
+/// run above it.
 ///
-/// 通常は `.splitViewScope()` モディファイアを通じて使う。
-///
-/// # 使用例
+/// Apply it through `splitViewScope(for:items:sheet:alert:)`.
 /// ```swift
 /// ContentView()
 ///     .splitViewScope(
@@ -35,7 +33,7 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
         @Bindable var sheetBinding = sheetPresenter
 
         NavigationSplitView {
-            // サイドバー
+            // Sidebar column.
             List(sidebarItems, selection: $presenterBinding.selectedSidebar) { item in
                 NavigationLink(value: item) {
                     item.label
@@ -43,9 +41,9 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
             }
             .navigationTitle("サイドバー")
         } detail: {
-            // 詳細ビュー
+            // Detail column.
             if let selected = splitViewPresenter.selectedSidebar {
-                // DetailRoute が Never でない場合、NavigationStack でラップ
+                // Routed detail: wrap it in a navigation stack.
                 if Sidebar.DetailRoute.self != Never.self {
                     @Bindable var routerBinding = router
 
@@ -62,7 +60,7 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
                         .routingAlert(for: Alert.self)
                 }
             } else {
-                // 未選択時のデフォルトビュー
+                // Nothing selected: fall back to the view this was applied to.
                 content
                     .routingAlert(for: Alert.self)
             }
@@ -72,18 +70,14 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
 }
 
 public extension View {
-    /// NavigationSplitView と SplitViewPresenter を連携させ、スプリットビュースコープを設定する。
+    /// Wraps the view in a navigation split view driven by the presenter in the environment.
     ///
-    /// このモディファイアは以下を行う：
-    /// - SplitViewPresenter の選択状態を NavigationSplitView にバインド
-    /// - 各詳細ビューに `.routingAlert()` を自動適用
-    /// - DetailRoute が指定されている場合、NavigationStack で詳細ビューをラップ
-    ///
-    /// # 使用例
+    /// The view it is applied to becomes the detail column's empty state. Each detail view gets
+    /// the alert modifier, plus a navigation stack when the sidebar declares a detail route.
     /// ```swift
     /// struct RootView: View {
     ///     var body: some View {
-    ///         Text("サイドバーから項目を選択してください")
+    ///         Text("Select an item from the sidebar")
     ///             .splitViewScope(
     ///                 for: AppSidebar.self,
     ///                 items: [.inbox, .sent, .archive],
@@ -94,11 +88,10 @@ public extension View {
     /// ```
     ///
     /// - Parameters:
-    ///   - type: サイドバー項目の型（SidebarItem に準拠）
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - sheet: シートの型（Sheetable に準拠、デフォルトは Never）
-    ///   - alert: アラートの型（Alertable に準拠）
-    /// - Returns: NavigationSplitView でラップされ、スプリットビューが有効化されたビュー
+    ///   - type: The sidebar type whose routing types should be used.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - sheet: The sheet type to wire in, or `Never` for none.
+    ///   - alert: The alert type wired into each detail view.
     func splitViewScope<Sidebar: SidebarItem, Sheet: Sheetable, Alert: Alertable>(
         for type: Sidebar.Type,
         items: [Sidebar],

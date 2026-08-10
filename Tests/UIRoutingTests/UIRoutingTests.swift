@@ -1,7 +1,7 @@
 import XCTest
 @testable import UIRouting
 
-/// UIRouting パッケージの基本テスト。
+/// Basic coverage for the router and the presenters.
 @MainActor
 final class UIRoutingTests: XCTestCase {
 
@@ -34,7 +34,7 @@ final class UIRoutingTests: XCTestCase {
         router.back()
         XCTAssertTrue(router.path.isEmpty)
 
-        // 空の状態で back() を呼んでもクラッシュしない
+        // Calling back() on an empty stack must not crash.
         router.back()
         XCTAssertTrue(router.path.isEmpty)
     }
@@ -59,7 +59,7 @@ final class UIRoutingTests: XCTestCase {
         XCTAssertEqual(router.path.count, 1)
         XCTAssertEqual(router.path.first, .settings)
 
-        // 空の状態で replace すると navigate と同じ動作
+        // On an empty stack, replace behaves like navigate.
         let emptyRouter = Router<TestRoute>()
         emptyRouter.replace(with: .home)
         XCTAssertEqual(emptyRouter.path.count, 1)

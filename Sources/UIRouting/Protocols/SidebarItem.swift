@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// NavigationSplitView のサイドバー項目を表すプロトコル。
+/// An entry in a split view's sidebar, together with the routing types its columns use.
 ///
-/// `SidebarItem` に準拠した型は、NavigationSplitView による型安全なサイドバー選択に使用できる。
-/// `Identifiable` と `Hashable` の実装は自動的に提供される。
+/// One conformance describes the whole layout: the sidebar row, the detail view, and the route,
+/// sheet, and alert types those columns route with. Anything left unspecified defaults to
+/// `Never`, which switches that feature off.
 ///
-/// # 使用例（2カラム）
+/// Two columns:
 /// ```swift
 /// enum AppSidebar: SidebarItem {
 ///     case inbox
@@ -17,11 +18,11 @@ import SwiftUI
 ///     var label: some View {
 ///         switch self {
 ///         case .inbox:
-///             Label("受信箱", systemImage: "tray")
+///             Label("Inbox", systemImage: "tray")
 ///         case .sent:
-///             Label("送信済み", systemImage: "paperplane")
+///             Label("Sent", systemImage: "paperplane")
 ///         case .archive:
-///             Label("アーカイブ", systemImage: "archivebox")
+///             Label("Archive", systemImage: "archivebox")
 ///         }
 ///     }
 ///
@@ -38,51 +39,45 @@ import SwiftUI
 /// }
 /// ```
 ///
-/// # 3カラムレイアウト対応
-/// 3 カラム NavigationSplitView を使用する場合は、以下の型を定義する：
-/// - `ContentItem`: 中央カラムで選択可能なアイテムの型（例: Email）
-/// - `ContentRoute`: 中央カラム内でのナビゲーションルート
-/// - `contentView`: 中央カラムに表示するビュー
-///
-/// # 注意
-/// - `id` プロパティの実装は不要（自動生成される）
-/// - `Hashable` の実装も不要（自動提供される）
+/// For a three-column layout, add `ContentItem` (what the middle column selects), `ContentRoute`
+/// (pushes inside that column), and `contentView` (the column itself). Do not write `id` or
+/// `hash(into:)` — both are provided.
 @MainActor
 public protocol SidebarItem: Hashable, Identifiable {
-    // View 関連
+    // Views
     associatedtype LabelView: View
     associatedtype Detail: View
 
-    // ルーティング型
+    // Routing types for the detail column
     associatedtype DetailRoute: Routable = Never
     associatedtype Sheet: Sheetable = Never
     associatedtype Alert: Alertable = Never
     associatedtype FullScreen: FullScreenCoverable = Never
     associatedtype CustomSheet: CustomHeightSheetable = Never
 
-    // 3カラム用の拡張ポイント
+    // Extra types used only by three-column layouts
     associatedtype ContentItem: Selectable = Never
     associatedtype ContentRoute: Routable = Never
     associatedtype ContentView: View = EmptyView
 
-    /// サイドバーに表示されるラベル
+    /// The row shown for this item in the sidebar.
     @ViewBuilder var label: LabelView { get }
 
-    /// このサイドバー項目が選択されたときに表示される詳細ビュー
+    /// The view shown in the last column while this item is selected.
     @ViewBuilder var detail: Detail { get }
 
-    /// 3カラムレイアウトのコンテンツビュー（中央カラム）
+    /// The middle column, which is empty unless `ContentItem` is given.
     @ViewBuilder var contentView: ContentView { get }
 }
 
 // MARK: - Default Implementations
 
-/// ContentItem が Never の場合のデフォルト実装（2カラム用）
+/// Supplies an empty middle column for two-column layouts.
 public extension SidebarItem where ContentItem == Never {
     var contentView: some View { EmptyView() }
 }
 
-/// ID が Int の場合の自動実装
+/// Derives the identifier from the value's hash.
 public extension SidebarItem where Self: Hashable, ID == Int {
     var id: Int {
         var hasher = Hasher()
@@ -91,7 +86,7 @@ public extension SidebarItem where Self: Hashable, ID == Int {
     }
 }
 
-/// ID が String の場合の自動実装
+/// Compares and hashes by identifier.
 public extension SidebarItem where ID == String {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
@@ -104,12 +99,10 @@ public extension SidebarItem where ID == String {
 
 // MARK: - Selectable Protocol
 
-/// 3カラムレイアウトの中央カラムで選択可能なアイテムを表すプロトコル。
+/// A row the middle column of a three-column split view can select.
 ///
-/// `Selectable` に準拠した型は、NavigationSplitView の中央カラムのリストで
-/// 選択可能なアイテムとして使用できる（例: メール、連絡先、ファイルなど）。
-///
-/// # 使用例
+/// Conform the model type itself — a message, a contact, a file — and give it the row SwiftUI
+/// should draw for it in the list.
 /// ```swift
 /// struct Email: Identifiable, Hashable {
 ///     let id: String
@@ -133,7 +126,7 @@ public protocol Selectable: Hashable, Identifiable {
     @ViewBuilder var label: LabelView { get }
 }
 
-/// ID が Int の場合の自動実装
+/// Derives the identifier from the value's hash.
 public extension Selectable where Self: Hashable, ID == Int {
     var id: Int {
         var hasher = Hasher()
@@ -142,7 +135,7 @@ public extension Selectable where Self: Hashable, ID == Int {
     }
 }
 
-/// ID が String の場合の自動実装
+/// Compares and hashes by identifier.
 public extension Selectable where ID == String {
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id

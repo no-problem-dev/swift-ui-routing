@@ -2,9 +2,10 @@ import XCTest
 @testable import UIRouting
 import SwiftUI
 
-/// FullScreenCoverable, Sheetable, CustomHeightSheetable, Alertableの
-/// Hashable/Equatable実装をテストするクラス。
-/// 特にenumのassociated values（クロージャを含む）の処理を検証します。
+/// Covers the Hashable and Equatable defaults the presentation protocols provide.
+///
+/// The point of interest is how associated values are treated, in particular that closures are
+/// left out of both comparison and hashing.
 final class HashableEquatableTests: XCTestCase {
 
     // MARK: - FullScreenCoverable Tests
@@ -14,11 +15,11 @@ final class HashableEquatableTests: XCTestCase {
         let cover2 = TestFullScreenCover.editor(itemId: "123")
         let cover3 = TestFullScreenCover.editor(itemId: "456")
 
-        // 同じassociated valueを持つ場合は等しい
+        // Same associated values compare equal.
         XCTAssertEqual(cover1, cover2)
         XCTAssertEqual(cover1.hashValue, cover2.hashValue)
 
-        // 異なるassociated valueを持つ場合は等しくない
+        // Different associated values do not.
         XCTAssertNotEqual(cover1, cover3)
         XCTAssertNotEqual(cover1.hashValue, cover3.hashValue)
     }
@@ -30,7 +31,7 @@ final class HashableEquatableTests: XCTestCase {
         let cover1 = TestFullScreenCover.picker { _ in called1 = true }
         let cover2 = TestFullScreenCover.picker { _ in called2 = true }
 
-        // クロージャは無視されるため、同じcase名であれば等しい
+        // Closures are ignored, so the same case compares equal.
         XCTAssertEqual(cover1, cover2)
         XCTAssertEqual(cover1.hashValue, cover2.hashValue)
     }
@@ -40,11 +41,11 @@ final class HashableEquatableTests: XCTestCase {
         let cover2 = TestFullScreenCover.editorWithCallback(itemId: "123") { print("complete") }
         let cover3 = TestFullScreenCover.editorWithCallback(itemId: "456") { print("done") }
 
-        // Hashable型(String)は比較され、クロージャは無視される
+        // The hashable payload is compared; the closure is ignored.
         XCTAssertEqual(cover1, cover2)
         XCTAssertEqual(cover1.hashValue, cover2.hashValue)
 
-        // Hashable型が異なれば等しくない（クロージャは関係ない）
+        // A different hashable payload breaks equality, whatever the closures do.
         XCTAssertNotEqual(cover1, cover3)
     }
 
@@ -53,11 +54,11 @@ final class HashableEquatableTests: XCTestCase {
         let cover2 = TestFullScreenCover.camera
         let cover3 = TestFullScreenCover.editor(itemId: "123")
 
-        // associated valueなしのcaseは等しい
+        // A case with no payload compares equal to itself.
         XCTAssertEqual(cover1, cover2)
         XCTAssertEqual(cover1.hashValue, cover2.hashValue)
 
-        // 異なるcaseは等しくない
+        // Different cases do not.
         XCTAssertNotEqual(cover1, cover3)
     }
 
@@ -79,7 +80,7 @@ final class HashableEquatableTests: XCTestCase {
         let sheet1 = TestSheet.picker { _ in print("selected1") }
         let sheet2 = TestSheet.picker { _ in print("selected2") }
 
-        // クロージャは無視されるため等しい
+        // Closures are ignored, so these compare equal.
         XCTAssertEqual(sheet1, sheet2)
         XCTAssertEqual(sheet1.hashValue, sheet2.hashValue)
     }
@@ -112,7 +113,7 @@ final class HashableEquatableTests: XCTestCase {
         let sheet1 = TestCustomHeightSheet.quickAdd { print("added1") }
         let sheet2 = TestCustomHeightSheet.quickAdd { print("added2") }
 
-        // クロージャは無視される
+        // Closures are ignored.
         XCTAssertEqual(sheet1, sheet2)
         XCTAssertEqual(sheet1.hashValue, sheet2.hashValue)
     }
@@ -133,7 +134,7 @@ final class HashableEquatableTests: XCTestCase {
         let alert2 = TestAlertWithClosure.delete(itemName: "File") { print("deleted2") }
         let alert3 = TestAlertWithClosure.delete(itemName: "Folder") { print("deleted1") }
 
-        // クロージャは無視されるため、itemNameのみで比較される
+        // Closures are ignored, so only itemName decides equality.
         XCTAssertEqual(alert1, alert2)
         XCTAssertEqual(alert1.hashValue, alert2.hashValue)
 
@@ -155,11 +156,11 @@ final class HashableEquatableTests: XCTestCase {
         set.insert(cover1)
         XCTAssertEqual(set.count, 1)
 
-        // 同じcase名なので重複とみなされ、追加されない
+        // Same case, so the set treats it as a duplicate.
         set.insert(cover2)
         XCTAssertEqual(set.count, 1)
 
-        // 異なるcaseなので追加される
+        // Different case, so it is added.
         set.insert(cover3)
         XCTAssertEqual(set.count, 2)
     }
@@ -171,7 +172,7 @@ final class HashableEquatableTests: XCTestCase {
         var dict: [TestSheet: String] = [:]
 
         dict[sheet1] = "First"
-        XCTAssertEqual(dict[sheet2], "First") // 同じキーとみなされる
+        XCTAssertEqual(dict[sheet2], "First") // Treated as the same key.
     }
 }
 

@@ -1,17 +1,16 @@
 import SwiftUI
 
-/// AlertPresenter用の環境値アクセスキー。
+/// The environment lookup for an alert presenter of a given alert type and layer.
 ///
-/// `@Environment(.alert(Alert.self, context: .navigation))` の形式で AlertPresenter にアクセスするために使用する。
-///
-/// # 使用例
+/// The layer matters: a view inside a sheet must read `context: .sheet`, or its alert goes to a
+/// presenter nothing is listening to.
 /// ```swift
 /// struct ContentView: View {
 ///     @Environment(.alert(AppAlert.self, context: .navigation)) private var alertPresenter
 ///
 ///     var body: some View {
 ///         Button("Show Alert") {
-///             alertPresenter.present(.error(message: "エラーが発生しました"))
+///             alertPresenter.present(.error(message: "Something went wrong"))
 ///         }
 ///     }
 /// }
@@ -24,12 +23,11 @@ public struct AlertEnvironmentKey<Alert: Alertable> {
 }
 
 public extension AlertEnvironmentKey {
-    /// AlertPresenter の環境値キーを生成する。
+    /// Builds the environment lookup for alert presenters of the given type.
     ///
     /// - Parameters:
-    ///   - type: アラートの型
-    ///   - context: アラートのコンテキスト（.navigation または .sheet）
-    /// - Returns: AlertPresenter用の環境値キー
+    ///   - type: The alert type whose presenter should be read.
+    ///   - context: The layer the alert is raised from.
     static func alert(_ type: Alert.Type, context: PresentationContext) -> AlertEnvironmentKey<Alert> {
         AlertEnvironmentKey<Alert>(context: context)
     }

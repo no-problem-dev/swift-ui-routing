@@ -1,96 +1,125 @@
 # ``UIRouting``
 
-SwiftUI 向けの型安全なルーティングライブラリ。NavigationStack・Sheet・Alert・TabView・NavigationSplitView を統一パターンで管理する。
+Type-safe routing for SwiftUI: navigation, sheets, covers, alerts, tabs, and split views behind one pattern.
 
 ## Overview
 
-UIRouting は、SwiftUI の画面遷移・モーダル表示・アラートをすべて「型安全な enum + @Environment」パターンに統一するライブラリ。
+Every destination in UIRouting is a case of an enum you write. The enum says what each screen is
+and what data it needs, the compiler checks that nothing is missing, and a router or presenter
+kept in the environment does the presenting.
+
+A case may also carry a callback and stay `Hashable`, which is what makes a screen able to report
+a result back to whoever opened it:
 
 ```swift
-// ルートを定義して
-enum AppRoute: Routable {
-    case detail(id: String)
-    @ViewBuilder var body: some View { DetailView(id: id) }
-}
+enum Screen: Routable {
+    case profile(userId: String)
+    case editor(onSave: (Draft) -> Void)
 
-// 環境から取得してナビゲーション
-@Environment(.router(AppRoute.self)) private var router
-
-Button("詳細へ") {
-    router.navigate(to: .detail(id: "123"))
+    @ViewBuilder
+    var body: some View {
+        switch self {
+        case .profile(let userId):
+            ProfileView(userId: userId)
+        case .editor(let onSave):
+            EditorView(onSave: onSave)
+        }
+    }
 }
 ```
 
-### 主な機能
+Closures are left out of comparison and hashing, so identity comes from the case name plus its
+hashable payload. You never write `id`, `==`, or `hash(into:)` for a `Routable`, `Sheetable`,
+`FullScreenCoverable`, `CustomHeightSheetable`, or `Alertable` type.
 
-- **NavigationStack** — `Router` と `Routable` で型安全なプッシュナビゲーション
-- **Sheet** — `SheetPresenter` と `Sheetable` でモーダルシートを管理
-- **Alert** — `AlertPresenter` と `Alertable` でアラートダイアログを管理
-- **FullScreenCover** — `FullScreenCoverPresenter` と `FullScreenCoverable` でフルスクリーン遷移
-- **CustomHeightSheet** — `CustomHeightSheetPresenter` と `CustomHeightSheetable` で高さ指定シート
-- **TabView** — `TabPresenter`・`TabRouting` で iOS 26 Liquid Glass 対応のタブ管理
-- **NavigationSplitView** — `SplitViewPresenter`・`SplitViewRouting` で 2/3 カラムレイアウト
+Because the router is read out of the environment rather than passed down, the view that pushes a
+screen does not need any of the views above it to know about it:
 
-### 設計原則
+```swift
+struct EditButton: View {
+    @Environment(.router(Screen.self)) private var router
 
-すべての遷移先は `@Environment` 経由でアクセスする。`@State` で Presenter を直接保持するのではなく、`.routing(...)` や `.routerScope(for:)` で注入された環境値を使う。これにより、任意の子ビューからルーティング操作が可能。
+    var body: some View {
+        Button("Edit") {
+            router.navigate(to: .editor(onSave: save))
+        }
+    }
+}
+```
+
+### One router per stack
+
+A router owns exactly one navigation stack. Tabs and split-view columns each get their own, which
+is what lets a user leave one tab deep in a stack, visit another, and come back to where they
+were. Presenters follow the same rule: the navigation layer and the sheet layer hold separate
+alert presenters, so an alert raised from inside a sheet still appears.
 
 ## Topics
 
-### はじめに
+### Essentials
 
 - <doc:GettingStarted>
 
-### ナビゲーション
+### Navigation
 
 - ``Router``
 - ``Routable``
 - ``RoutingScopeModifier``
+- ``RouterEnvironmentKey``
 
-### シート
+### Sheets
 
 - ``SheetPresenter``
 - ``Sheetable``
+- ``SheetEnvironmentKey``
 
-### アラート
+### Alerts
 
 - ``AlertPresenter``
 - ``Alertable``
 - ``AlertAction``
+- ``AlertEnvironmentKey``
+- ``AlertOnNavigationModifier``
+- ``AlertOnSheetModifier``
 
-### フルスクリーンカバー
+### Full-screen covers
 
 - ``FullScreenCoverPresenter``
 - ``FullScreenCoverable``
+- ``FullScreenCoverEnvironmentKey``
 
-### カスタム高さシート
+### Sheets with custom heights
 
 - ``CustomHeightSheetPresenter``
 - ``CustomHeightSheetable``
+- ``CustomHeightSheetEnvironmentKey``
 
-### タブ
+### Tabs
 
-- ``TabPresenter``
 - ``TabRouting``
+- ``TabPresenter``
 - ``Tabbable``
 - ``TabContext``
+- ``TabEnvironmentKey``
+- ``TabScopeModifier``
+- ``TabRoutingModifier``
 
-### スプリットビュー
+### Split views
 
-- ``SplitViewPresenter``
 - ``SplitViewRouting``
 - ``ThreeColumnSplitViewRouting``
+- ``SplitViewPresenter``
 - ``SidebarItem``
 - ``Selectable``
+- ``SplitViewEnvironmentKey``
+- ``SelectedContentBindingEnvironmentKey``
+- ``SplitViewScopeModifier``
+- ``SplitViewRoutingModifier``
+- ``ThreeColumnContentRoutingModifier``
+- ``ThreeColumnDetailRoutingModifier``
+- ``EmptySidebarToolbar``
 
-### 環境値アクセス
-
-- ``RouterEnvironmentKey``
-- ``SheetEnvironmentKey``
-- ``AlertEnvironmentKey``
-- ``FullScreenCoverEnvironmentKey``
-- ``TabEnvironmentKey``
-
-### プレゼンテーションコンテキスト
+### Presentation layers
 
 - ``PresentationContext``
+- ``RoutingModifier``

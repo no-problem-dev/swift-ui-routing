@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// スプリットビューベースのルーティングを簡単に構築するためのビュー。
+/// A two-column split view whose detail column arrives with routing already wired up.
 ///
-/// SplitViewPresenter を使ってサイドバーの選択状態を管理し、
-/// 各詳細ビューに自動的にルーティング機能（Router、SheetPresenter など）を適用する。
-///
-/// # 使用例
+/// The detail column is wrapped in a navigation stack when the sidebar type declares a
+/// `DetailRoute`, and left plain when it does not.
 /// ```swift
 /// struct ContentView: View {
 ///     @State private var splitViewPresenter = SplitViewPresenter<MailSidebar>(initialSelection: .inbox)
@@ -28,13 +26,13 @@ import SwiftUI
 ///     var label: some View {
 ///         switch self {
 ///         case .inbox:
-///             Label("受信箱", systemImage: "tray")
+///             Label("Inbox", systemImage: "tray")
 ///         case .sent:
-///             Label("送信済み", systemImage: "paperplane")
+///             Label("Sent", systemImage: "paperplane")
 ///         case .archive:
-///             Label("アーカイブ", systemImage: "archivebox")
+///             Label("Archive", systemImage: "archivebox")
 ///         case .starred:
-///             Label("スター付き", systemImage: "star")
+///             Label("Starred", systemImage: "star")
 ///         }
 ///     }
 ///
@@ -58,12 +56,12 @@ public struct SplitViewRouting<Sidebar: SidebarItem, PlaceholderContent: View>: 
     private let sidebarItems: [Sidebar]
     private let placeholderContent: PlaceholderContent
 
-    /// スプリットビュールーティングを初期化する。
+    /// Creates a two-column split view with a placeholder of your own.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーの選択状態を管理する SplitViewPresenter
-    ///   - items: サイドバーに表示する項目の配列
-    ///   - placeholder: 未選択時に表示するプレースホルダーコンテンツ
+    ///   - splitViewPresenter: Holds which sidebar row is selected.
+    ///   - items: The rows of the sidebar, in order.
+    ///   - placeholder: Shown in the detail column while nothing is selected.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         items: [Sidebar],
@@ -76,7 +74,7 @@ public struct SplitViewRouting<Sidebar: SidebarItem, PlaceholderContent: View>: 
 
     public var body: some View {
         NavigationSplitView {
-            // サイドバー
+            // Sidebar column.
             List(sidebarItems, selection: $splitViewPresenter.selectedSidebar) { item in
                 NavigationLink(value: item) {
                     item.label
@@ -84,10 +82,10 @@ public struct SplitViewRouting<Sidebar: SidebarItem, PlaceholderContent: View>: 
             }
             .navigationTitle("サイドバー")
         } detail: {
-            // 詳細ビュー
+            // Detail column.
             if let selected = splitViewPresenter.selectedSidebar {
                 if Sidebar.DetailRoute.self != Never.self {
-                    // DetailRouteがある場合はNavigationStackでラップ
+                    // Routed detail: wrap it in a navigation stack.
                     NavigationStack(path: $router.path) {
                         selected.detail
                             .splitViewRouting(for: Sidebar.self)
@@ -100,12 +98,12 @@ public struct SplitViewRouting<Sidebar: SidebarItem, PlaceholderContent: View>: 
                         environment[router: RouterSpecifier<Sidebar.DetailRoute>()] = router
                     }
                 } else {
-                    // DetailRouteがない場合はそのまま表示
+                    // No routes: show the view as is.
                     selected.detail
                         .splitViewRouting(for: Sidebar.self)
                 }
             } else {
-                // 未選択時のプレースホルダー
+                // Nothing selected yet.
                 placeholderContent
             }
         }
@@ -118,11 +116,11 @@ public struct SplitViewRouting<Sidebar: SidebarItem, PlaceholderContent: View>: 
 // MARK: - Convenience Initializer
 
 extension SplitViewRouting where PlaceholderContent == Text {
-    /// プレースホルダーにデフォルトテキストを使用するイニシャライザ。
+    /// Creates a two-column split view with a stock placeholder.
     ///
     /// - Parameters:
-    ///   - splitViewPresenter: サイドバーの選択状態を管理する SplitViewPresenter
-    ///   - items: サイドバーに表示する項目の配列
+    ///   - splitViewPresenter: Holds which sidebar row is selected.
+    ///   - items: The rows of the sidebar, in order.
     public init(
         splitViewPresenter: SplitViewPresenter<Sidebar>,
         items: [Sidebar]

@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// CustomHeightSheetPresenter用の環境値アクセスキー。
+/// The environment lookup for a custom-height sheet presenter of a given type and layer.
 ///
-/// `@Environment(.customHeightSheet(CustomSheet.self))` の形式で CustomHeightSheetPresenter にアクセスするために使用する。
-/// シート内からカスタム高さシートを開く場合は `@Environment(.customHeightSheet(CustomSheet.self, context: .sheet))` を使用する。
+/// The sheet type and the layer together pick the presenter, so reading without a context from
+/// inside a sheet reaches the navigation layer's presenter instead of the sheet's own.
 ///
-/// # 使用例
 /// ```swift
-/// // 通常のカスタム高さシート表示
+/// // From the main content
 /// struct ContentView: View {
 ///     @Environment(.customHeightSheet(AppCustomSheet.self)) private var presenter
 ///
@@ -18,7 +17,7 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // シート内からカスタム高さシートを開く
+/// // From inside a sheet
 /// struct SettingsSheet: View {
 ///     @Environment(.customHeightSheet(AppCustomSheet.self, context: .sheet)) private var presenter
 ///
@@ -38,12 +37,11 @@ public struct CustomHeightSheetEnvironmentKey<Sheet> where Sheet: Identifiable &
 }
 
 public extension CustomHeightSheetEnvironmentKey {
-    /// CustomHeightSheetPresenter の環境値キーを生成する。
+    /// Builds the environment lookup for custom-height sheet presenters of the given type.
     ///
     /// - Parameters:
-    ///   - type: カスタム高さシートの型
-    ///   - context: シートのコンテキスト（.navigation または .sheet）。デフォルトは .navigation
-    /// - Returns: CustomHeightSheetPresenter用の環境値キー
+    ///   - type: The sheet type whose presenter should be read.
+    ///   - context: The layer the presenter belongs to.
     static func customHeightSheet(_ type: Sheet.Type, context: PresentationContext = .navigation) -> CustomHeightSheetEnvironmentKey<Sheet> {
         CustomHeightSheetEnvironmentKey<Sheet>(context: context)
     }

@@ -2,58 +2,35 @@ English | [日本語](./README.ja.md)
 
 # UIRouting
 
-Type-safe routing library for SwiftUI.
+Type-safe routing for SwiftUI: navigation, sheets, covers, alerts, tabs, and split views behind one pattern.
 
 ![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)
-![Platforms](https://img.shields.io/badge/Platforms-iOS%2017.0+%20%7C%20macOS%2014.0+-blue.svg)
+![Platforms](https://img.shields.io/badge/Platforms-iOS%2018.0+%20%7C%20macOS%2015.0+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-
-📚 **[Full Documentation](https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/)**
 
 ## Features
 
-```swift
-// Push navigation
-router.navigate(to: .detail(id: "123"))
-
-// Sheet presentation
-sheetPresenter.present(.settings)
-
-// Alert presentation
-alertPresenter.present(.deleteConfirmation { /* ... */ })
-```
-
-- **Type-safe** — all transitions verified at compile time
-- **Concise** — instant access via `@Environment`
-- **Full coverage** — Navigation, Sheet, FullScreenCover, CustomHeightSheet, Alert, Tab, SplitView
-
-## Installation
-
-```swift
-// Package.swift
-dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-ui-routing.git", from: "2.1.0")
-]
-```
-
-Or via Xcode: File > Add Package Dependencies > enter URL.
+- **Type-safe** — every destination is an enum case, checked at compile time
+- **Reachable from anywhere** — routers and presenters live in `@Environment`, so a button several levels down can navigate without the views above it knowing
+- **Closures in payloads** — a case can carry a callback and still be `Hashable`; you never write `id`, `==`, or `hash(into:)`
+- **One pattern for all of it** — NavigationStack, Sheet, FullScreenCover, CustomHeightSheet, Alert, TabView, NavigationSplitView
 
 ## Basic Usage
 
-### 1. Define routes
+### 1. Describe the destinations
 
 ```swift
 enum AppRoute: Routable {
     case detail(id: String)
 
-    var id: String { "detail_\(id)" }
+    @ViewBuilder
     var body: some View { DetailView(id: id) }
 }
 
 enum AppSheet: Sheetable {
     case settings
 
-    var id: String { "settings" }
+    @ViewBuilder
     var body: some View { SettingsView() }
 }
 
@@ -75,10 +52,10 @@ enum AppAlert: Alertable {
 }
 ```
 
-### 2. Setup
+### 2. Set up
 
 ```swift
-// App: create Router and Presenters, inject into environment
+// Create the router and presenters once and inject them.
 @main
 struct MyApp: App {
     @State private var router = Router<AppRoute>()
@@ -98,7 +75,7 @@ struct MyApp: App {
     }
 }
 
-// ContentView: set up the NavigationStack root
+// The routing scope gives you the NavigationStack.
 struct ContentView: View {
     var body: some View {
         HomeView()
@@ -106,6 +83,9 @@ struct ContentView: View {
     }
 }
 ```
+
+Two alert presenters, not one: SwiftUI cannot raise an alert from a view a sheet already covers,
+so the sheet layer gets its own.
 
 ### 3. Use in views
 
@@ -125,6 +105,9 @@ struct HomeView: View {
 
 ## TabView
 
+Each tab keeps its own router, so a user can leave one tab deep in a stack, visit another, and
+come back to where they were.
+
 ```swift
 enum AppTab: Tabbable {
     case home, settings
@@ -132,6 +115,7 @@ enum AppTab: Tabbable {
     typealias Route = AppRoute
     typealias Sheet = AppSheet
 
+    @ViewBuilder
     var contentView: some View {
         switch self {
         case .home: HomeView()
@@ -139,6 +123,7 @@ enum AppTab: Tabbable {
         }
     }
 
+    @ViewBuilder
     var tabLabel: some View {
         switch self {
         case .home: Label("Home", systemImage: "house")
@@ -147,21 +132,17 @@ enum AppTab: Tabbable {
     }
 }
 
-// Setup
 @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
 
 TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
 ```
 
-**Cross-tab navigation** (switch tab then push):
+Switching tab and pushing in one gesture — the callback runs after the transition, so the push
+is not swallowed by the animation:
 
 ```swift
 @Environment(.tab(AppTab.self)) private var tabPresenter
 
-// Switch tab
-tabPresenter.select(.home)
-
-// Switch tab and navigate
 tabPresenter.select(.home) { context in
     context.router.navigate(to: .detail(id: "123"))
 }
@@ -171,18 +152,14 @@ tabPresenter.select(.home) { context in
 
 ### FullScreenCover
 
+Presented as an ordinary sheet on macOS, which has no full-screen cover.
+
 ```swift
 enum AppFullScreenCover: FullScreenCoverable {
     case camera
     case editor(id: String)
 
-    var id: String {
-        switch self {
-        case .camera: return "camera"
-        case .editor(let id): return "editor_\(id)"
-        }
-    }
-
+    @ViewBuilder
     var body: some View {
         switch self {
         case .camera: CameraView()
@@ -191,13 +168,11 @@ enum AppFullScreenCover: FullScreenCoverable {
     }
 }
 
-// Setup: inject into environment via .routing()
-@State private var fullScreenCoverPresenter = FullScreenCoverPresenter<AppFullScreenCover>()
-
+// Inject it with the full routing overload.
 ContentView()
     .routing(
-        router: Router<AppRoute>(),
-        sheetPresenter: SheetPresenter<AppSheet>(),
+        router: router,
+        sheetPresenter: sheetPresenter,
         customHeightSheetPresenter: CustomHeightSheetPresenter<Never>(),
         fullScreenCoverPresenter: fullScreenCoverPresenter,
         alertPresenterOnNavigation: AlertPresenter<AppAlert>(),
@@ -205,25 +180,20 @@ ContentView()
         splitViewPresenter: SplitViewPresenter<Never>()
     )
 
-// Use
 @Environment(.fullScreenCover(AppFullScreenCover.self)) private var presenter
 presenter.present(.camera)
 ```
 
 ### CustomHeightSheet
 
+Each case declares the heights it rests at, so the call site never mentions detents.
+
 ```swift
 enum AppCustomSheet: CustomHeightSheetable {
     case picker
     case quickAdd
 
-    var id: String {
-        switch self {
-        case .picker: return "picker"
-        case .quickAdd: return "quickAdd"
-        }
-    }
-
+    @ViewBuilder
     var body: some View {
         switch self {
         case .picker: PickerView()
@@ -239,14 +209,11 @@ enum AppCustomSheet: CustomHeightSheetable {
     }
 }
 
-// Setup
-@State private var presenter = CustomHeightSheetPresenter<AppCustomSheet>()
-
+// This modifier creates the presenter and attaches the sheet.
 ContentView()
-    .customHeightSheet(presenter: presenter)
+    .customHeightSheetPresenter(for: AppCustomSheet.self)
 
-// Use
-@Environment(.customHeightSheet(AppCustomSheet.self)) private var presenter
+@Environment(.customHeightSheet(AppCustomSheet.self, context: .sheet)) private var presenter
 presenter.present(.picker)
 ```
 
@@ -255,11 +222,12 @@ presenter.present(.picker)
 ### 2-column (sidebar + detail)
 
 ```swift
-enum Sidebar: SidebarItem {
+enum Sidebar: String, SidebarItem {
     case inbox, sent
 
     typealias DetailRoute = MailRoute
 
+    var id: String { rawValue }
     var label: some View { Label("Inbox", systemImage: "tray") }
     var detail: some View { InboxView() }
 }
@@ -271,17 +239,20 @@ SplitViewRouting(splitViewPresenter: presenter, items: [.inbox, .sent])
 
 ### 3-column (sidebar + list + detail)
 
+The middle and detail columns each get their own router, so a push in one leaves the other alone.
+
 ```swift
-enum Sidebar: SidebarItem {
+enum Sidebar: String, SidebarItem {
     case inbox
 
-    typealias ContentItem = Email         // selectable item in center column
-    typealias ContentRoute = FilterRoute  // navigation within center column
-    typealias DetailRoute = MailRoute     // navigation within detail column
+    typealias ContentItem = Email         // selected in the middle column
+    typealias ContentRoute = FilterRoute  // pushes inside the middle column
+    typealias DetailRoute = MailRoute     // pushes inside the detail column
 
+    var id: String { rawValue }
     var label: some View { Label("Inbox", systemImage: "tray") }
-    var contentView: some View { MailListView() }  // center column
-    var detail: some View { MailDetailView() }     // detail column
+    var contentView: some View { MailListView() }
+    var detail: some View { MailDetailView() }
 }
 
 @State private var presenter = SplitViewPresenter<Sidebar>(initialSelection: .inbox)
@@ -289,7 +260,7 @@ enum Sidebar: SidebarItem {
 ThreeColumnSplitViewRouting(splitViewPresenter: presenter, items: [.inbox])
 ```
 
-**Read selected item in the center column:**
+The middle column's selection binding is installed for you — hand it straight to `List`:
 
 ```swift
 @Environment(.selectedContentBinding(Email.self)) private var selectedContentBinding
@@ -301,43 +272,30 @@ List(selection: selectedContentBinding) {
 }
 ```
 
-## API Reference
+## Documentation
 
-### Router
+Full API reference and guides:
+**[no-problem-dev.github.io/swift-ui-routing](https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/)**
 
-```swift
-router.navigate(to: .detail)    // push
-router.back()                   // pop
-router.popToRoot()              // pop to root
-router.replace(with: .profile)  // replace stack
-```
+Runnable apps: [TodoExample](Examples/TodoExample) (navigation, sheets, alerts, tabs, covers) and
+[MailExample](Examples/MailExample) (3-column split view).
 
-### Presenter
+## Installation
 
 ```swift
-sheetPresenter.present(.settings)           // sheet
-fullScreenCoverPresenter.present(.editor)   // full-screen cover
-customHeightSheetPresenter.present(.picker) // custom height sheet
-alertPresenter.present(.error("Error"))     // alert
-tabPresenter.select(.search)                // tab switch
-splitViewPresenter.select(.inbox)           // sidebar selection
+// Package.swift
+dependencies: [
+    .package(url: "https://github.com/no-problem-dev/swift-ui-routing.git", from: "2.0.0")
+]
 ```
 
-## Examples
-
-See complete examples:
-- **[TodoExample](Examples/TodoExample)** — Navigation, Sheet, Alert, TabView, FullScreenCover, CustomHeightSheet
-- **[MailExample](Examples/MailExample)** — 3-column NavigationSplitView
+Or in Xcode: File > Add Package Dependencies, then enter the URL.
 
 ## Requirements
 
-- iOS 17.0+ / macOS 14.0+
+- iOS 18.0+ / macOS 15.0+
 - Swift 6.0+
 
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
-## Support
-
-Report issues and feature requests on [GitHub Issues](https://github.com/no-problem-dev/swift-ui-routing/issues).

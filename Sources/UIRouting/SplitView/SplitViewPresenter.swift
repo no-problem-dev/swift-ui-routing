@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// NavigationSplitView の選択状態を管理する型安全なプレゼンター。
+/// Holds what is selected in a split view's sidebar and, for three columns, its middle list.
 ///
-/// 2カラムおよび3カラムのNavigationSplitViewに対応し、
-/// サイドバーとコンテンツの選択状態を一元管理する。
+/// The same presenter serves both layouts; the middle selection simply stays `nil` when there
+/// are only two columns.
 ///
-/// # 2カラムレイアウト
+/// Two columns:
 /// ```swift
 /// @State private var splitViewPresenter = SplitViewPresenter<AppSidebar>()
 ///
@@ -15,7 +15,7 @@ import SwiftUI
 /// )
 /// ```
 ///
-/// # 3カラムレイアウト
+/// Three columns:
 /// ```swift
 /// @State private var splitViewPresenter = SplitViewPresenter<MailSidebar>(initialSelection: .inbox)
 ///
@@ -25,13 +25,13 @@ import SwiftUI
 /// )
 /// ```
 ///
-/// # プログラムからの選択操作
+/// Selecting from code:
 /// ```swift
 /// struct SomeView: View {
 ///     @Environment(.splitView(AppSidebar.self)) private var splitViewPresenter
 ///
 ///     var body: some View {
-///         Button("受信箱を表示") {
+///         Button("Show inbox") {
 ///             splitViewPresenter.select(.inbox)
 ///         }
 ///     }
@@ -40,18 +40,17 @@ import SwiftUI
 @MainActor
 @Observable
 public final class SplitViewPresenter<Sidebar: SidebarItem> {
-    /// 現在選択されているサイドバー項目（左カラム）
+    /// The selected sidebar row, or `nil` when nothing is selected.
     public var selectedSidebar: Sidebar?
 
-    /// 現在選択されているコンテンツ項目（中央カラム、3カラムレイアウト用）
+    /// The row selected in the middle column of a three-column layout.
     ///
-    /// 3カラムレイアウトでは、中央カラムのリストで選択されたアイテムを保持する。
-    /// 2カラムレイアウトでは使わない（常にnil）。
+    /// Always `nil` in a two-column layout, where the middle column does not exist.
     public var selectedContent: Sidebar.ContentItem?
 
-    /// SplitViewPresenter を初期化する。
+    /// Creates a presenter, optionally with a sidebar row already selected.
     ///
-    /// - Parameter initialSelection: 最初に選択されるサイドバー項目（オプション）
+    /// - Parameter initialSelection: The row to select before the user picks one.
     public init(initialSelection: Sidebar? = nil) {
         self.selectedSidebar = initialSelection
         self.selectedContent = nil
@@ -59,25 +58,20 @@ public final class SplitViewPresenter<Sidebar: SidebarItem> {
 
     // MARK: - Sidebar Selection
 
-    /// 指定したサイドバー項目を選択する。
-    ///
-    /// 3カラムレイアウトの場合、サイドバー選択が変更されると
-    /// コンテンツの選択は自動的にリセットされる。
-    ///
-    /// # 使用例
+    /// Selects a sidebar row, clearing the middle column's selection in a three-column layout.
     /// ```swift
     /// @Environment(.splitView(AppSidebar.self)) private var splitViewPresenter
     ///
-    /// Button("受信箱を表示") {
+    /// Button("Show inbox") {
     ///     splitViewPresenter.select(.inbox)
     /// }
     /// ```
     ///
-    /// - Parameter item: 選択するサイドバー項目
+    /// - Parameter item: The row to select.
     public func select(_ item: Sidebar) {
         selectedSidebar = item
 
-        // 3カラムの場合、サイドバー選択変更時にコンテンツ選択をリセット
+        // A row chosen under the old sidebar item means nothing under the new one.
         if Sidebar.ContentItem.self != Never.self {
             selectedContent = nil
         }
@@ -85,11 +79,9 @@ public final class SplitViewPresenter<Sidebar: SidebarItem> {
 
     // MARK: - Content Selection (3-column support, future use)
 
-    /// 指定したコンテンツ項目を選択する（3カラム用）。
+    /// Selects a row in the middle column of a three-column layout.
     ///
-    /// 3カラムレイアウトでのみ使われる。2カラムレイアウトでは使わない。
-    ///
-    /// - Parameter content: 選択するコンテンツ項目
+    /// - Parameter content: The row to select.
     public func select<Content>(content: Content) where Content == Sidebar.ContentItem {
         selectedContent = content
     }

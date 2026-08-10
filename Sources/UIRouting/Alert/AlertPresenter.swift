@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// アラートの表示を管理する型安全なプレゼンター
+/// Raises alerts of one type.
 ///
-/// Navigation と Sheet で独立したアラートを表示できる。
+/// The navigation layer and the sheet layer each get their own instance, which is why an alert
+/// asked for from inside a sheet still shows.
 ///
-/// # 使用例
 /// ```swift
-/// // 1. Alertインスタンスを作成してEnvironmentに注入
+/// // 1. Create the presenters and inject them into the environment.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -15,21 +15,21 @@ import SwiftUI
 ///         alertPresenterOnSheet: AlertPresenter<Alert>()
 ///     )
 ///
-/// // 2. .alertOnNavigation() または .alertOnSheet() を設定
+/// // 2. Apply routingAlert(for:) or sheetAlert(for:).
 /// var body: some View {
 ///     MainView()
-///         .alertOnNavigation(for: Alert.self)
+///         .routingAlert(for: Alert.self)
 /// }
 ///
-/// // 3. アラートを表示
+/// // 3. Present an alert.
 /// struct MainView: View {
 ///     @Environment(.alert(Alert.self, context: .navigation)) private var alertPresenter
 ///
 ///     var body: some View {
-///         Button("削除") {
+///         Button("Delete") {
 ///             alertPresenter.present(.delete(
-///                 itemName: "アイテム",
-///                 onConfirm: { /* 削除処理 */ }
+///                 itemName: "Item",
+///                 onConfirm: { /* delete it */ }
 ///             ))
 ///         }
 ///     }
@@ -38,18 +38,21 @@ import SwiftUI
 @MainActor
 @Observable
 public final class AlertPresenter<Alert: Alertable> {
+    /// The alert currently on screen, or `nil` when none is.
     public var presentedAlert: Alert?
+
+    /// Whether an alert is on screen. SwiftUI writes back to it when the user dismisses one.
     public var isPresented: Bool = false
 
     public init() {}
 
-    /// 指定したアラートを表示
+    /// Puts an alert on screen, replacing any that is already there.
     public func present(_ alert: Alert) {
         presentedAlert = alert
         isPresented = true
     }
 
-    /// 表示中のアラートを閉じる
+    /// Takes the current alert off screen.
     public func dismiss() {
         isPresented = false
         presentedAlert = nil

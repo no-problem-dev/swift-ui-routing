@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// SplitView の詳細ビューに対してルーティング設定を自動化する ViewModifier。
+/// Gives a split view's detail column its presenters and alert handling.
 ///
-/// 各詳細ビューに Router、SheetPresenter、AlertPresenter などのルーティングコンポーネントを
-/// 自動設定し、NavigationStack との連携も行う。
+/// The router comes from the environment, since the split view owns it, while the presenters
+/// are created here so each detail column has its own sheets and alerts.
 ///
-/// 通常は `.splitViewRouting()` モディファイアを通じて使う。
+/// Apply it through `splitViewRouting(for:)`.
 public struct SplitViewRoutingModifier<
     Sidebar: SidebarItem,
     Route: Routable,
@@ -18,7 +18,7 @@ public struct SplitViewRoutingModifier<
     @Environment private var splitViewPresenter: SplitViewPresenter<Sidebar>
     @Environment private var router: Router<Route>
 
-    // 各Presenterを内部で管理（RouterはEnvironmentから取得）
+    // Presenters owned here; the router comes from the environment.
     @State private var sheetPresenter = SheetPresenter<Sheet>()
     @State private var alertPresenterOnNavigation = AlertPresenter<Alert>()
     @State private var alertPresenterOnSheet = AlertPresenter<Alert>()
@@ -32,7 +32,7 @@ public struct SplitViewRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // Presenterを環境に注入（RouterはすでにEnvironmentにあるのでそのまま使う）
+            // Publish them, passing the environment's router straight through.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -42,13 +42,13 @@ public struct SplitViewRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: SplitViewPresenter<Never>()
             )
-            // Sheetの自動適用
+            // Sheets.
             .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // FullScreenCoverの自動適用
+            // Full-screen covers.
             .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // CustomHeightSheetの自動適用
+            // Custom-height sheets.
             .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
-            // Alertの自動適用
+            // Alerts.
             .modifier(AlertModifierIfNeeded(presenter: alertPresenterOnNavigation))
     }
 }

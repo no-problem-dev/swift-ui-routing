@@ -3,291 +3,371 @@
 ## [Unreleased]
 
 
-このプロジェクトに対する注目すべき変更はすべてこのファイルに記録されます。
+All notable changes to this project are recorded in this file.
 
-このフォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
-このプロジェクトは [Semantic Versioning](https://semver.org/lang/ja/) に準拠しています。
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [2.1.1] - 2026-07-19
+
+### Changed
+- Tests follow Swift 6 isolation (`@MainActor`, `nonisolated` `id`, `Sheetable` conformance).
+- README and DocC work: a landing page and a Getting Started article.
+- CI workflows synced to the standard SSOT template (tests + release-on-tag; the old
+  auto-release is gone). DocC builds on macos-26 / Xcode 26 (Swift 6.2).
+
+## [2.1.0] - 2026-04-26
+
+### Added
+- **`TabPresenter.isSelectedTabPushed`**: whether the selected tab's `NavigationStack` is
+  deeper than its root, observable from outside. `TabPresenter.routers` is private, so
+  there was no way to ask this. Reads the `@Observable` `Router.path`, so a SwiftUI view
+  re-evaluates on push and pop — enough to, say, hide the tab bar only while pushed.
+
+## [2.0.0] - 2026-04-14
+
+### Changed
+- **Migrated to the iOS 26 `Tab(value:role:)` API**. The internals of `TabScopeModifier` /
+  `TabRouting` move off the legacy `.tabItem` + `.tag` to the declarative
+  `SwiftUI.Tab(value:role:) { content } label: { label }`, so the Liquid Glass affordances
+  (`.tabBarMinimizeBehavior`, `.tabViewBottomAccessory`, `.tabViewStyle(.sidebarAdaptable)`,
+  `TabSection`, `.badge`) chain straight off the call site.
+
+### Added
+- `Tabbable.tabRole: TabRole?` (default `nil`). Returning `.search` from a search tab is
+  enough for the system to place it by role.
+- A generic `Content` on `TabRouting`, plus
+  `init(tabPresenter:tabs:@ViewBuilder content: (Tab) -> Content)` for customising how each
+  tab is drawn (environment injection, overlays). The existing
+  `init(tabPresenter:tabs:)` stays as a convenience over `Tab.contentView`, so source
+  compatibility holds.
+
+### ⚠️ Breaking Changes
+- The platform minimum rises to iOS 18 / macOS 15, which `Tab(value:)` requires. iOS 17 and
+  below are no longer supported.
+- `Tabbable` gains `tabRole`, but the default implementation (`nil`) means existing
+  conformances need no change.
+
+## [1.0.17] - 2026-03-01
+
+### Added
+- **`routerScope(for:)` modifier**: a self-contained Router + NavigationStack setup that does
+  not require an `Alertable` type. Creates, binds and injects the Router in one go, the same
+  pattern as `sheetPresenter(for:)`.
+
+## [1.0.16] - 2026-02-28
+
+### Added
+- **`context` parameter on `SheetPresenterModifier`**: `.sheetPresenter(for:context:)` takes a
+  `PresentationContext`, so independent sheet management at a NavigationStack root
+  (`.navigation`) and a sheet opened from inside a sheet (`.sheet`) can be told apart explicitly.
+
+## [1.0.15] - 2026-02-28
+
+### Added
+- Swipe-to-delete and column width control on `ThreeColumnSplitViewRouting`.
+
+## [1.0.14] - 2026-02-24
+
+### Added
+- Sidebar toolbar support on `ThreeColumnSplitViewRouting`.
+
+### Fixed
+- `ToolbarContentBuilder` type mismatch in the convenience initialiser.
+
+## [1.0.13] - 2026-02-24
+
+### Added
+- `sidebarTitle` parameter on `ThreeColumnSplitViewRouting`.
 
 ## [1.0.12] - 2025-11-09
 
-### 修正
-- 自動リリースワークフローのメッセージを完全に日本語に統一（PRディスクリプション、リリースノート、ログメッセージ）
+### Fixed
+- Made the automatic release workflow's messages consistently Japanese (PR description, release notes, log messages)
 
 ## [1.0.11] - 2025-11-09
 
-### 修正
-- 自動リリースワークフローのheredoc内インデンテーション修正（YAMLシンタックスエラー解消）
+### Fixed
+- Fixed the indentation inside the heredoc in the automatic release workflow (resolving a YAML syntax error)
 
 ## [1.0.10] - 2025-11-09
 
-### 修正
-- 自動リリースワークフローの完全版実装（swift-design-systemベース）
+### Fixed
+- Full implementation of the automatic release workflow (based on swift-design-system)
 
 ## [1.0.9] - 2025-11-09
 
-### 修正
-- ワークフローファイルのheredoc内バッククォートエスケープ修正
+### Fixed
+- Fixed backquote escaping inside the heredoc in the workflow file
 
 ## [1.0.8] - 2025-11-09
 
-### その他
-- 自動リリースワークフローの動作確認
+### Other
+- Checked that the automatic release workflow works
 
 
 ## [1.0.7] - 2025-11-06
 
-### 修正
-- **Swift Package Manager 互換性**: v1.0.6 タグの fingerprint 不一致問題を解決
-  - タグの再作成により、SPM のバージョン解決エラーを修正
-  - ユーザーが `does not match previously recorded value` エラーに遭遇する問題を解消
+### Fixed
+- **Swift Package Manager compatibility**: resolved the fingerprint mismatch on the v1.0.6 tag
+  - Recreating the tag fixed SPM's version resolution error
+  - Users no longer hit the `does not match previously recorded value` error
 
 ## [1.0.6] - 2025-11-06
 
-### 追加
-- **ネストプレゼンテーション機能**: シート内からシートを開く機能を追加
-  - `PresentationContext` enum - `.navigation` と `.sheet` で階層を区別
-  - シート内プレゼンテーション用の `.sheetPresenter()` modifier
-  - TodoExampleに `CategoryPickerSheet` 実装例を追加
-  - クロージャベースのデータ受け渡しで型安全性を確保
+### Added
+- **Nested presentation**: opening a sheet from within a sheet
+  - `PresentationContext` enum — `.navigation` and `.sheet` distinguish the levels
+  - `.sheetPresenter()` modifier for presenting from inside a sheet
+  - Added a `CategoryPickerSheet` example to TodoExample
+  - Closure-based data passing keeps it type-safe
 
-- **統合コンテキストサポート**: すべてのプレゼンテーションタイプにコンテキスト対応
-  - `Sheet` - `.sheet(AppSheet.self, context: .sheet)` でネスト可能
-  - `FullScreenCover` - `.fullScreenCover(Cover.self, context: .sheet)` でネスト可能
-  - `CustomHeightSheet` - `.customHeightSheet(Sheet.self, context: .sheet)` でネスト可能
-  - `Alert` - 既存の `context` パラメータを統合 `PresentationContext` に統一
+- **Unified context support**: every presentation type takes a context
+  - `Sheet` — nestable with `.sheet(AppSheet.self, context: .sheet)`
+  - `FullScreenCover` — nestable with `.fullScreenCover(Cover.self, context: .sheet)`
+  - `CustomHeightSheet` — nestable with `.customHeightSheet(Sheet.self, context: .sheet)`
+  - `Alert` — the existing `context` parameter folded into the unified `PresentationContext`
 
-### 改善
-- **大規模なファイル構造リファクタリング**: コードベースの保守性と可読性を大幅に向上
-  - 1000行超の大規模ファイルを機能別に分割（単一責任の原則に準拠）
-  - 各プレゼンタータイプごとにファイルを整理（Alert/, Sheet/, Router/, など）
-  - 公開APIと内部実装の明確な分離
+### Improved
+- **Large-scale file structure refactoring**: much better maintainability and readability
+  - Split files over 1000 lines by feature (following the single responsibility principle)
+  - Organised files per presenter type (Alert/, Sheet/, Router/, and so on)
+  - A clear separation between the public API and the internal implementation
 
-### 変更
-- **ディレクトリ構造の最適化**:
-  - `Internal/` ディレクトリを削除（不要になった）
-  - `Environment/` ディレクトリを削除（ファイルを適切な場所に再配置）
-  - `Common/` ディレクトリに共通コンポーネントを集約
-    - `PresentationContext.swift` - 共通enum
-    - `RoutingModifier.swift` - 統合Modifier
+### Changed
+- **Directory structure**:
+  - Removed the `Internal/` directory (no longer needed)
+  - Removed the `Environment/` directory (files moved where they belong)
+  - Collected shared components in `Common/`
+    - `PresentationContext.swift` — the shared enum
+    - `RoutingModifier.swift` — the unified modifier
 
-- **ファイル分割の詳細**:
-  - `Specifiers.swift` (146行) → 7つの専用ファイルに分割
-  - `GenericEnvironmentKeys.swift` (135行) → 7つの専用ファイルに分割
-  - `StaticMemberLookup.swift` (364行) → 7つの専用ファイルに分割
-  - `PresentationModifiers.swift` (255行) → 4つの専用ファイルに分割
-  - `EnvironmentSubscripts.swift` (100行) → 7つの専用ファイルに分割
+- **The file splits in detail**:
+  - `Specifiers.swift` (146 lines) → 7 dedicated files
+  - `GenericEnvironmentKeys.swift` (135 lines) → 7 dedicated files
+  - `StaticMemberLookup.swift` (364 lines) → 7 dedicated files
+  - `PresentationModifiers.swift` (255 lines) → 4 dedicated files
+  - `EnvironmentSubscripts.swift` (100 lines) → 7 dedicated files
 
-### 技術的改善
-- **コロケーション**: 関連するファイルを同じディレクトリに配置
-  - 例: `Sheet/` に `SheetPresenter.swift`, `SheetSpecifier.swift`, `SheetEnvironmentKey.swift`, `SheetModifiers.swift` など
-- **単一責任**: 各ファイルが1つの明確な責務のみを持つ
-- **保守性向上**: 変更時の影響範囲が明確化
-- **型安全なネスト**: クロージャを使用してBindingのHashable問題を回避
+### Technical improvements
+- **Colocation**: related files live in the same directory
+  - e.g. `Sheet/` holds `SheetPresenter.swift`, `SheetSpecifier.swift`, `SheetEnvironmentKey.swift`, `SheetModifiers.swift`
+- **Single responsibility**: each file has one clear job
+- **Maintainability**: the blast radius of a change is obvious
+- **Type-safe nesting**: closures sidestep the Hashable problem with Binding
 
-### 影響
-- ✅ **公開API**: 後方互換性あり（新機能は additive）
-- ✅ **ビルド**: すべて正常にコンパイル
-- ✅ **ドキュメント**: すべて最新の構造を反映
-- ✅ **機能**: すべての機能が正常に動作
+### Impact
+- ✅ **Public API**: backward compatible (the new features are additive)
+- ✅ **Build**: everything compiles
+- ✅ **Documentation**: reflects the new structure throughout
+- ✅ **Behaviour**: everything works
 
 ## [1.0.5] - 2025-11-06
 
-### 追加
-- **Mirror-based Hashable/Equatable実装**: すべてのプロトコルにenumのassociated values対応を追加
-  - `FullScreenCoverable` - クロージャを含むassociated valuesに対応
-  - `Sheetable` - クロージャを含むassociated valuesに対応
-  - `Routable` - クロージャを含むassociated valuesに対応
-  - `CustomHeightSheetable` - 既存実装に`nonisolated`を追加
-  - `Alertable` - 既存実装に`nonisolated`を追加
+### Added
+- **Mirror-based Hashable/Equatable**: every protocol now handles enums with associated values
+  - `FullScreenCoverable` — handles associated values that include closures
+  - `Sheetable` — handles associated values that include closures
+  - `Routable` — handles associated values that include closures
+  - `CustomHeightSheetable` — added `nonisolated` to the existing implementation
+  - `Alertable` — added `nonisolated` to the existing implementation
 
-### 改善
-- **Swift 6並行性対応**: すべてのHashable/Equatable実装に`nonisolated`を適用
-  - 厳格な並行性チェック（Swift 6）に完全対応
-  - Main Actor isolationとの競合を解消
-- **ドキュメント充実**: クロージャ対応の使用例を追加
-  - `FullScreenCoverable`: `picker(onSelect: (Item) -> Void)` の例
-  - `Routable`: `editor(onSave: () -> Void)` の例
-  - すべてのプロトコルに一貫した注意書きを追加
+### Improved
+- **Swift 6 concurrency**: `nonisolated` applied to every Hashable/Equatable implementation
+  - Fully handles strict concurrency checking (Swift 6)
+  - Resolves the conflict with Main Actor isolation
+- **Fuller documentation**: added usage examples for the closure case
+  - `FullScreenCoverable`: the `picker(onSelect: (Item) -> Void)` example
+  - `Routable`: the `editor(onSave: () -> Void)` example
+  - Consistent notes added to every protocol
 
-### 技術詳細
-- **Mirror-based実装の仕組み**:
-  - enumのcase名で同一性を判定
-  - Hashable型のassociated valueのみを比較・ハッシュ化
-  - クロージャ型は`AnyHashable`に変換できないため自動的に除外
-  - 手動でのHashable/Equatable実装が不要に
+### Technical details
+- **How the Mirror-based implementation works**:
+  - Identity is decided by the enum's case name
+  - Only associated values of Hashable types are compared and hashed
+  - Closure types cannot be converted to `AnyHashable`, so they are excluded automatically
+  - No hand-written Hashable/Equatable needed
 
-### 利点
-- ✅ クロージャを含むenumでコンパイルエラーが発生しない
-- ✅ 型安全性を維持しながら柔軟な設計が可能
-- ✅ ボイラープレートコードの大幅削減
-- ✅ Swift 6の厳格な並行性チェックに対応
+### Benefits
+- ✅ No compile error on an enum that contains a closure
+- ✅ A flexible design without giving up type safety
+- ✅ Far less boilerplate
+- ✅ Handles Swift 6's strict concurrency checking
 
 ## [1.0.4] - 2025-11-04
 
-### 追加
-- **ThreeColumnSplitViewRouting**: 3カラムNavigationSplitView（サイドバー | リスト | 詳細）の完全対応
-  - `ContentItem: Selectable` - 中央カラムで選択可能なアイテム型
-  - `ContentRoute: Routable` - 中央カラム内でのナビゲーション
-  - `contentView` - 中央カラムに表示するビュー
-- **4階層ルーティング**:
-  1. サイドバー切り替え（受信箱 → 送信済み）
-  2. コンテンツ選択（メール選択 → 詳細に表示）
-  3. ContentRoute（中央カラム内のpush遷移）
-  4. DetailRoute（詳細カラム内のpush遷移）
-- **selectedContentBinding**: 中央カラムの選択状態を型安全に管理
-  - `@Environment(.selectedContentBinding(Email.self))` でアクセス
-  - ジェネリックな実装で完全な型安全性
-- **MailExample**: 3カラムSplitViewの完全実装例
-  - サイドバーごとに異なるデータ表示
-  - ContentRoute/DetailRouteの実装例
-  - 2カラムとの比較
+### Added
+- **ThreeColumnSplitViewRouting**: full support for a three-column NavigationSplitView (sidebar | list | detail)
+  - `ContentItem: Selectable` — the item type selectable in the middle column
+  - `ContentRoute: Routable` — navigation within the middle column
+  - `contentView` — the view shown in the middle column
+- **Four levels of routing**:
+  1. Sidebar switching (Inbox → Sent)
+  2. Content selection (pick a mail → show it in the detail column)
+  3. ContentRoute (a push within the middle column)
+  4. DetailRoute (a push within the detail column)
+- **selectedContentBinding**: type-safe management of the middle column's selection
+  - Reached with `@Environment(.selectedContentBinding(Email.self))`
+  - A generic implementation, fully type-safe
+- **MailExample**: a complete three-column SplitView example
+  - Different data per sidebar entry
+  - Examples of ContentRoute/DetailRoute
+  - A comparison with the two-column case
 
-### 改善
-- **README完全リニューアル**: 404行 → 238行（41%削減）
-  - 冒頭にコード例を追加（3行で全機能を理解）
-  - 3カラムSplitViewの完全説明
-  - API一覧の追加
-  - 実装例重視の構成
-- **ドキュメントコメント改善**: 利用者目線での説明に統一
-  - 「将来使用」などの不正確な表現を削除
-  - 具体例を汎用的に改善
-  - 各型の役割と使い分けを明確化
-- **Examples README追加**: TodoExample/MailExampleの説明を充実
+### Improved
+- **README rewritten**: 404 lines → 238 lines (41% shorter)
+  - A code example up front (the whole feature set in three lines)
+  - A full explanation of the three-column SplitView
+  - An API list
+  - Structured around worked examples
+- **Better documentation comments**: written from the caller's point of view
+  - Removed inaccurate phrasing such as "for future use"
+  - Made the concrete examples more general
+  - Made each type's role and when to use it explicit
+- **Examples README**: fuller descriptions of TodoExample/MailExample
 
-### 内部実装
-- `SelectedContentBindingSpecifier` - 型安全なBinding管理
-- `GenericSelectedContentBindingKey` - Environment統合
-- `ThreeColumnSplitViewRoutingModifier` - 自動ルーティング設定
-- 既存のRouter/SheetPresenterと同じSpecifierパターンを踏襲
-- ランタイムチェック（`!= Never.self`）で機能の有無を判定
+### Internal
+- `SelectedContentBindingSpecifier` — type-safe Binding management
+- `GenericSelectedContentBindingKey` — Environment integration
+- `ThreeColumnSplitViewRoutingModifier` — automatic routing setup
+- Follows the same Specifier pattern as the existing Router/SheetPresenter
+- A runtime check (`!= Never.self`) decides whether a feature is present
 
 ## [1.0.3] - 2025-11-04
 
-### 追加
-- **DocC ドキュメント自動デプロイ**: GitHub Actions による GitHub Pages へのドキュメント自動公開
-  - main ブランチへのプッシュで自動的にドキュメントを生成・デプロイ
-  - オンラインドキュメント: https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/
-- **README にドキュメント URL を追加**: オンラインドキュメントへのリンクを追加
+### Added
+- **Automatic DocC deployment**: documentation published to GitHub Pages by GitHub Actions
+  - A push to main generates and deploys the documentation automatically
+  - Online documentation: https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/
+- **Documentation URL in the README**: a link to the online documentation
 
-### 改善
-- swift-docc-plugin の依存関係を追加
-- GitHub Actions ワークフローで macOS ランナーと Xcode 16.1 を使用
-- SwiftPM サンドボックス権限の適切な処理
+### Improved
+- Added the swift-docc-plugin dependency
+- The GitHub Actions workflow uses a macOS runner and Xcode 16.1
+- Proper handling of SwiftPM sandbox permissions
 
 ## [1.0.2] - 2025-11-04
 
-### 追加
-- **クロスタブナビゲーション**: タブ切り替えと画面遷移を同時に実行する機能を実装
-  - `tabPresenter.select(.home) { context in context.router.navigate(to: .detail) }` API
-  - 各タブごとに独立したRouterを保持
-- **自動ルーティング設定**: `TabRouting`が各タブに自動的にルーティング機能を適用
-- **包括的な公開APIドキュメント**: 全公開APIに利用者目線のドキュメントコメントを追加
+### Added
+- **Cross-tab navigation**: switch tab and navigate in one step
+  - The `tabPresenter.select(.home) { context in context.router.navigate(to: .detail) }` API
+  - Each tab keeps its own Router
+- **Automatic routing setup**: `TabRouting` applies routing to each tab automatically
+- **Comprehensive public API documentation**: documentation comments written from the caller's point of view on every public API
 
-### 変更
-- **enum-basedタブアプローチ**: タブ定義を簡素化し、ボイラープレートコードを削減
-  - `RoutingConfiguration`プロトコルを削除
-  - `Tabbable`プロトコルに直接`associatedtype`を定義
-- **README大幅更新**: クイックスタートをタブベースアプリに変更し、より実践的な例を提供
+### Changed
+- **Enum-based tabs**: simpler tab definitions, less boilerplate
+  - Removed the `RoutingConfiguration` protocol
+  - `associatedtype` declared directly on the `Tabbable` protocol
+- **README largely updated**: the quick start is now a tab-based app, a more realistic example
 
-### 改善
-- `.routingScope()`の順序を最適化（`.routing()`の前に配置）
-- タブ切り替えのアニメーション完了を待機してから画面遷移を実行（視覚的に自然な動作）
-- サンプルアプリでフルスクリーンカバーとカスタム高さシートを有効化
+### Improved
+- Optimised the ordering of `.routingScope()` (placed before `.routing()`)
+- Navigation waits for the tab-switch animation to finish (visually natural)
+- Enabled full screen cover and custom height sheet in the sample app
 
-### 修正
-- クロスタブナビゲーションが複数回実行される問題を修正
-- タブ切り替え前のRouterに対してナビゲーションが実行される問題を解決
+### Fixed
+- Cross-tab navigation ran more than once
+- Navigation ran against the Router from before the tab switch
 
-### 削除
-- `RoutingConfiguration.swift`: 使用されていないプロトコル
-- `TodoListRoutingConfig.swift`: enum-based移行により不要になった設定ファイル
-- 重複したTabView説明セクションをREADMEから削除（131行削減）
+### Removed
+- `RoutingConfiguration.swift`: an unused protocol
+- `TodoListRoutingConfig.swift`: a configuration file made redundant by the move to enum-based tabs
+- The duplicated TabView section in the README (131 lines shorter)
 
 ## [1.0.1] - 2025-11-04
 
-### 追加
-- **TabView対応**: 型安全なタブ管理機能を実装
-  - `Tabbable`プロトコル - タブの定義（body + tabLabel）
-  - `TabPresenter` - タブの選択状態を管理（selectedTab + select()）
-  - `TabRouting` View - TabViewを直接構築する簡潔なAPI
-  - Environment統合 - `@Environment(.tab(AppTab.self))` でアクセス可能
-  - タブごとに独立したNavigationStack、Router、AlertPresenterを保持
+### Added
+- **TabView support**: type-safe tab management
+  - `Tabbable` protocol — defines a tab (body + tabLabel)
+  - `TabPresenter` — manages the selected tab (selectedTab + select())
+  - `TabRouting` View — a concise API that builds the TabView directly
+  - Environment integration — reached with `@Environment(.tab(AppTab.self))`
+  - Each tab keeps its own NavigationStack, Router and AlertPresenter
 
-- **フルスクリーンカバー対応**: `FullScreenCoverPresenter` を実装
-  - `AppFullScreenCover` enum - フルスクリーンモーダル定義
-  - TodoExampleに実装例を追加（PhotoCaptureView、NoteEditorView）
-  - Environment統合 - `@Environment(.fullScreenCover(Cover.self))`
+- **Full screen cover support**: `FullScreenCoverPresenter`
+  - `AppFullScreenCover` enum — full screen modal definitions
+  - Examples added to TodoExample (PhotoCaptureView, NoteEditorView)
+  - Environment integration — `@Environment(.fullScreenCover(Cover.self))`
 
-- **カスタム高さシート対応**: `CustomHeightSheetPresenter` を実装
-  - `CustomHeightSheetable`プロトコル - detentsで高さをカスタマイズ
-  - TodoExampleに実装例を追加（CategoryPickerSheet、QuickAddSheet）
-  - Environment統合 - `@Environment(.customHeightSheet(Sheet.self))`
+- **Custom height sheet support**: `CustomHeightSheetPresenter`
+  - `CustomHeightSheetable` protocol — customise the height with detents
+  - Examples added to TodoExample (CategoryPickerSheet, QuickAddSheet)
+  - Environment integration — `@Environment(.customHeightSheet(Sheet.self))`
 
-### 改善
-- **アラートAPI改善**: より直感的な命名に変更
-  - `.alertOnNavigation()` → `.routingAlert()` に変更
-  - `.alertOnSheet()` → `.sheetAlert()` に変更
-  - NavigationStack以外でも使えることを明示
+### Improved
+- **Better alert API**: more intuitive names
+  - `.alertOnNavigation()` → `.routingAlert()`
+  - `.alertOnSheet()` → `.sheetAlert()`
+  - Makes it explicit that these work outside a NavigationStack too
 
-### 修正
-- RoutingScopeModifierでListView（root content）にもアラートを適用
-  - 以前は遷移先画面にしかアラートが適用されていなかった
-  - NavigationStackの最初の画面でもアラートが動作するように修正
+### Fixed
+- RoutingScopeModifier applies alerts to ListView (the root content) as well
+  - Previously alerts only applied to pushed screens
+  - Alerts now work on the first screen of a NavigationStack
 
-### 変更
-- TodoExample大幅拡張
-  - タブベースのアプリ構造に移行
-  - AppRouteからsettingsケースを削除（タブに移行）
-  - TodoTabRoot - Todoタブの独立したルーティングコンテキスト
-  - AdvancedSettingsSheet - Sheet内独自NavigationStack実装例
-- README更新 - TabView、FullScreenCover、CustomHeightSheetの使用例を追加
+### Changed
+- TodoExample considerably extended
+  - Moved to a tab-based app structure
+  - Removed the settings case from AppRoute (it became a tab)
+  - TodoTabRoot — an independent routing context for the Todo tab
+  - AdvancedSettingsSheet — an example of a NavigationStack of its own inside a sheet
+- README updated — usage examples for TabView, FullScreenCover and CustomHeightSheet
 
 ## [1.0.0] - 2025-11-03
 
-### 追加
-- **初回リリース**: SwiftUI向け型安全なルーティングライブラリ
+### Added
+- **First release**: a type-safe routing library for SwiftUI
 
-- **基本ルーティング機能**:
-  - `Router<Route>` - NavigationStack統合のルーティング管理
-  - `Routable`プロトコル - 画面遷移の型定義
-  - `navigate(to:)` - 型安全な画面遷移
-  - `back()` / `popToRoot()` - ナビゲーションスタック操作
+- **Basic routing**:
+  - `Router<Route>` — routing tied to NavigationStack
+  - `Routable` protocol — the type definition for a screen transition
+  - `navigate(to:)` — type-safe navigation
+  - `back()` / `popToRoot()` — navigation stack operations
 
-- **シート管理**:
-  - `SheetPresenter<Sheet>` - モーダルシート管理
-  - `Sheetable`プロトコル - シート定義（Identifiable + Hashable + body）
-  - `present()` / `dismiss()` - シート表示・非表示
+- **Sheet management**:
+  - `SheetPresenter<Sheet>` — modal sheet management
+  - `Sheetable` protocol — sheet definitions (Identifiable + Hashable + body)
+  - `present()` / `dismiss()` — showing and hiding a sheet
 
-- **アラート管理**:
-  - `AlertPresenter<Alert>` - アラート管理
-  - `Alertable`プロトコル - アラート定義（title + actions）
-  - `AlertAction` - アラートボタン定義（default/cancel/destructive）
+- **Alert management**:
+  - `AlertPresenter<Alert>` — alert management
+  - `Alertable` protocol — alert definitions (title + actions)
+  - `AlertAction` — alert button definitions (default/cancel/destructive)
 
-- **Environment統合**:
-  - 静的メンバールックアップパターン
-  - `@Environment(.router(Route.self))` - Router取得
-  - `@Environment(.sheet(Sheet.self))` - SheetPresenter取得
-  - `@Environment(.alert(Alert.self, context:))` - AlertPresenter取得
+- **Environment integration**:
+  - A static member lookup pattern
+  - `@Environment(.router(Route.self))` — get the Router
+  - `@Environment(.sheet(Sheet.self))` — get the SheetPresenter
+  - `@Environment(.alert(Alert.self, context:))` — get the AlertPresenter
 
-- **コンテキスト分離**:
-  - Navigation階層とSheet階層で独立したAlertPresenterを持つ
-  - `.navigation` / `.sheet` コンテキストでアラートを区別
+- **Context separation**:
+  - The Navigation level and the Sheet level hold independent AlertPresenters
+  - The `.navigation` / `.sheet` contexts tell alerts apart
 
-- **TodoExampleサンプルアプリ**:
-  - Router、SheetPresenter、AlertPresenterの実装例
-  - Todoリストアプリ（追加、編集、削除、フィルタ）
-  - カテゴリ管理、設定画面
+- **The TodoExample sample app**:
+  - Examples of Router, SheetPresenter and AlertPresenter
+  - A todo list app (add, edit, delete, filter)
+  - Category management, a settings screen
 
-### 技術仕様
-- **プラットフォーム**: iOS 17.0+、macOS 14.0+
-- **言語**: Swift 6.0+
-- **依存関係**: ゼロ依存
-- **アーキテクチャ**:
-  - Specifierパターン - 環境値の識別
-  - GenericEnvironmentKey - 型安全な環境値アクセス
-  - EnvironmentSubscript - 動的な環境値解決
+### Technical specifications
+- **Platforms**: iOS 17.0+, macOS 14.0+
+- **Language**: Swift 6.0+
+- **Dependencies**: none
+- **Architecture**:
+  - The Specifier pattern — identifying environment values
+  - GenericEnvironmentKey — type-safe access to environment values
+  - EnvironmentSubscript — dynamic environment value resolution
 
-[未リリース]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.12...HEAD
+[Unreleased]: https://github.com/no-problem-dev/swift-ui-routing/compare/2.1.1...HEAD
+[2.1.1]: https://github.com/no-problem-dev/swift-ui-routing/compare/v2.1.0...2.1.1
+[2.1.0]: https://github.com/no-problem-dev/swift-ui-routing/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.17...v2.0.0
+[1.0.17]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.16...v1.0.17
+[1.0.16]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.15...v1.0.16
+[1.0.15]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.14...v1.0.15
+[1.0.14]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.13...v1.0.14
+[1.0.13]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.12...v1.0.13
 [1.0.12]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.11...v1.0.12
 [1.0.11]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.10...v1.0.11
 [1.0.10]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.9...v1.0.10

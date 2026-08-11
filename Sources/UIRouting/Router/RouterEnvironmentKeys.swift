@@ -10,7 +10,7 @@ extension Router {
 struct GenericRouterKey<Route: Routable>: EnvironmentKey {
     static var defaultValue: Router<Route> {
         MainActor.assumeIsolated {
-            Router<Route>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { Router<Route>.createDefault() }
         }
     }
 }

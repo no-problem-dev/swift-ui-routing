@@ -90,47 +90,11 @@ public extension Alertable {
     /// Closure payloads are skipped, which is what lets a case carry a callback and still be
     /// compared and hashed.
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
-        let lhsMirror = Mirror(reflecting: lhs)
-        let rhsMirror = Mirror(reflecting: rhs)
-
-        // Different case names mean the values are not equal.
-        guard lhsMirror.children.first?.label == rhsMirror.children.first?.label else {
-            return false
-        }
-
-        // Compare associated values, hashable ones only.
-        let lhsHashableValues = extractHashableValues(from: lhs)
-        let rhsHashableValues = extractHashableValues(from: rhs)
-
-        return lhsHashableValues == rhsHashableValues
+        ReflectedIdentity.areEqual(lhs, rhs)
     }
 
     nonisolated func hash(into hasher: inout Hasher) {
-        let mirror = Mirror(reflecting: self)
-
-        // Hash the case name.
-        hasher.combine(mirror.children.first?.label ?? "")
-
-        // Hash only the hashable associated values.
-        let hashableValues = extractHashableValues(from: self)
-        hasher.combine(hashableValues)
-    }
-
-    private nonisolated static func extractHashableValues(from value: Self) -> [AnyHashable] {
-        let mirror = Mirror(reflecting: value)
-        guard let values = mirror.children.first?.value else {
-            return []
-        }
-
-        let valuesMirror = Mirror(reflecting: values)
-        return valuesMirror.children.compactMap { child -> AnyHashable? in
-            // Closures cannot be cast to AnyHashable, so they drop out here.
-            child.value as? AnyHashable
-        }
-    }
-
-    private nonisolated func extractHashableValues(from value: Self) -> [AnyHashable] {
-        Self.extractHashableValues(from: value)
+        ReflectedIdentity.hash(self, into: &hasher)
     }
 }
 

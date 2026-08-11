@@ -10,7 +10,7 @@ extension AlertPresenter {
 struct GenericAlertPresenterOnNavigationKey<Alert: Alertable>: EnvironmentKey {
     static var defaultValue: AlertPresenter<Alert> {
         MainActor.assumeIsolated {
-            AlertPresenter<Alert>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { AlertPresenter<Alert>.createDefault() }
         }
     }
 }
@@ -18,7 +18,7 @@ struct GenericAlertPresenterOnNavigationKey<Alert: Alertable>: EnvironmentKey {
 struct GenericAlertPresenterOnSheetKey<Alert: Alertable>: EnvironmentKey {
     static var defaultValue: AlertPresenter<Alert> {
         MainActor.assumeIsolated {
-            AlertPresenter<Alert>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { AlertPresenter<Alert>.createDefault() }
         }
     }
 }

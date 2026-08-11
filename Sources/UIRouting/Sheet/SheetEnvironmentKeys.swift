@@ -10,7 +10,7 @@ extension SheetPresenter {
 struct GenericSheetPresenterKey<Sheet>: EnvironmentKey where Sheet: Sheetable {
     static var defaultValue: SheetPresenter<Sheet> {
         MainActor.assumeIsolated {
-            SheetPresenter<Sheet>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { SheetPresenter<Sheet>.createDefault() }
         }
     }
 }
@@ -18,7 +18,7 @@ struct GenericSheetPresenterKey<Sheet>: EnvironmentKey where Sheet: Sheetable {
 struct GenericSheetPresenterOnSheetKey<Sheet>: EnvironmentKey where Sheet: Sheetable {
     static var defaultValue: SheetPresenter<Sheet> {
         MainActor.assumeIsolated {
-            SheetPresenter<Sheet>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { SheetPresenter<Sheet>.createDefault() }
         }
     }
 }

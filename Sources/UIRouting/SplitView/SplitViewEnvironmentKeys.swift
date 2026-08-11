@@ -10,7 +10,7 @@ extension SplitViewPresenter {
 struct GenericSplitViewPresenterKey<Sidebar: SidebarItem>: EnvironmentKey {
     static var defaultValue: SplitViewPresenter<Sidebar> {
         MainActor.assumeIsolated {
-            SplitViewPresenter<Sidebar>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { SplitViewPresenter<Sidebar>.createDefault() }
         }
     }
 }

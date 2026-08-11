@@ -10,7 +10,7 @@ extension CustomHeightSheetPresenter {
 struct GenericCustomHeightSheetPresenterKey<Sheet>: EnvironmentKey where Sheet: CustomHeightSheetable {
     static var defaultValue: CustomHeightSheetPresenter<Sheet> {
         MainActor.assumeIsolated {
-            CustomHeightSheetPresenter<Sheet>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { CustomHeightSheetPresenter<Sheet>.createDefault() }
         }
     }
 }
@@ -18,7 +18,7 @@ struct GenericCustomHeightSheetPresenterKey<Sheet>: EnvironmentKey where Sheet: 
 struct GenericCustomHeightSheetPresenterOnSheetKey<Sheet>: EnvironmentKey where Sheet: CustomHeightSheetable {
     static var defaultValue: CustomHeightSheetPresenter<Sheet> {
         MainActor.assumeIsolated {
-            CustomHeightSheetPresenter<Sheet>.createDefault()
+            DefaultPresenterStore.instance(for: Self.self) { CustomHeightSheetPresenter<Sheet>.createDefault() }
         }
     }
 }

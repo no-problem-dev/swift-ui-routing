@@ -312,7 +312,7 @@ Runnable apps: [TodoExample](Examples/TodoExample) (navigation, sheets, alerts, 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/no-problem-dev/swift-ui-routing.git", from: "2.0.0")
+    .package(url: "https://github.com/no-problem-dev/swift-ui-routing.git", from: "3.0.0")
 ]
 ```
 

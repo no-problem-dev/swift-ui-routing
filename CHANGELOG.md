@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-09-30
+
 Presenting now works the way the README builds it, and navigation that arrives before a tab's
 router exists waits instead of being dropped. Every breaking change below fails to compile until
 the call site is updated, except the first migration step, which has to be searched for.

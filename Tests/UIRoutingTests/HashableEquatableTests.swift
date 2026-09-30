@@ -25,11 +25,8 @@ final class HashableEquatableTests: XCTestCase {
     }
 
     func testFullScreenCoverableWithClosureAssociatedValues() {
-        var called1 = false
-        var called2 = false
-
-        let cover1 = TestFullScreenCover.picker { _ in called1 = true }
-        let cover2 = TestFullScreenCover.picker { _ in called2 = true }
+        let cover1 = TestFullScreenCover.picker { _ in print("first") }
+        let cover2 = TestFullScreenCover.picker { _ in print("second") }
 
         // Closures are ignored, so the same case compares equal.
         XCTAssertEqual(cover1, cover2)
@@ -144,11 +141,8 @@ final class HashableEquatableTests: XCTestCase {
     // MARK: - Collection Tests
 
     func testInSetWithClosures() {
-        var calledA = false
-        var calledB = false
-
-        let cover1 = TestFullScreenCover.picker { _ in calledA = true }
-        let cover2 = TestFullScreenCover.picker { _ in calledB = true }
+        let cover1 = TestFullScreenCover.picker { _ in print("A") }
+        let cover2 = TestFullScreenCover.picker { _ in print("B") }
         let cover3 = TestFullScreenCover.camera
 
         var set: Set<TestFullScreenCover> = []

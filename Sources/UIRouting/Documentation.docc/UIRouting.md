@@ -100,8 +100,8 @@ alert presenters, so an alert raised from inside a sheet still appears.
 - ``TabPresenter``
 - ``Tabbable``
 - ``TabContext``
+- ``TabDestination``
 - ``TabEnvironmentKey``
-- ``TabScopeModifier``
 - ``TabRoutingModifier``
 
 ### Split views

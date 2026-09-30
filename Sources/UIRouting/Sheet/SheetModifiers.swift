@@ -8,7 +8,6 @@ import SwiftUI
 /// for the machinery.
 struct SheetModifierIfNeeded<Sheet: Sheetable>: ViewModifier {
     @Bindable var presenter: SheetPresenter<Sheet>
-    @Environment(\.self) private var environment
 
     func body(content: Content) -> some View {
         if Sheet.self != Never.self {

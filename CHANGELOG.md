@@ -2,6 +2,63 @@
 
 ## [Unreleased]
 
+Presenting now works the way the README builds it, and navigation that arrives before a tab's
+router exists waits instead of being dropped. Every breaking change below fails to compile until
+the call site is updated, except the first migration step, which has to be searched for.
+
+### Fixed
+- **`routing(...)` attaches the sheet, full-screen cover, and custom-height sheet it publishes.**
+  It used to put the presenters in the environment and attach nothing, so an app built as the
+  README shows called `present(_:)` and nothing appeared. `TabRouting` and the split-view routings
+  attached them themselves, which is why only they worked; they now get them from `routing(...)`.
+- **`@Environment(.tab(AppTab.self))` is `nil` outside a `TabRouting`** instead of stopping the app
+  with `fatalError`. Previews and components shared with untabbed screens can read it.
+- **`TabPresenter.select(_:then:)` waits for the tab's router.** It used to sleep 100 ms and, if the
+  router still was not registered, drop the navigation (and trip an assertion in debug). A
+  notification, widget, or Siri launch lands before the tab has appeared, so those pushes were
+  lost. The callback now runs at once when the router exists and otherwise when the tab registers
+  it. Only the latest waiting request is kept; a later `select` or `open` replaces it.
+- **`fullScreenCoverPresenter(for:)` and `customHeightSheetPresenter(for:)` published on the
+  `.sheet` layer while the readers default to `.navigation`**, so the presenter a view read was
+  one nothing was bound to. Both now take the layer explicitly (see below).
+- No compiler warnings under Swift 6.4. The presenters' and `Router`'s `init()` are `nonisolated`,
+  because the `@State` macro evaluates `@State private var x = Presenter<T>()` outside the main
+  actor.
+
+### Added
+- **`TabDestination<Tab>`**: a tab plus the screens to stack on its root — what a URL, a
+  notification, or a widget tap turns into.
+- **`TabPresenter.open(_ destination:)`**: switches to the tab and replaces its stack, waiting for
+  the router like `select(_:then:)`.
+- **`TabPresenter.open(_ url:resolve:) -> Bool`**: runs the app's URL → `TabDestination` conversion
+  and opens the result. What a URL means stays the app's contract.
+
+### ⚠️ Breaking Changes and migration
+- **Remove your own `.sheet(item:)` / `.fullScreenCover(item:)` for presenters passed to
+  `routing(...)`.** Left in, the same value is presented twice. This one compiles unchanged, so
+  search for it:
+  ```swift
+  // Before
+  RootView()
+      .sheet(item: $sheets.presentedSheet) { $0.body }
+      .routing(router: router, sheetPresenter: sheets, …)
+  // After
+  RootView()
+      .routing(router: router, sheetPresenter: sheets, …)
+  ```
+- **`fullScreenCoverPresenter(for:)` → `fullScreenCoverPresenter(for:context:)`, and
+  `customHeightSheetPresenter(for:)` → `customHeightSheetPresenter(for:context:)`.** `context` has no
+  default. To keep what 2.x did, pass `context: .sheet`; to be read by
+  `@Environment(.fullScreenCover(X.self))` without a context, pass `.navigation`. Apply it to the
+  parent of the view that reads it — the environment does not reach the view whose body applies it.
+- **`@Environment(.tab(X.self))` is `TabPresenter<X>?`.** Write `tabPresenter?.select(...)`, and
+  `tabPresenter?.isSelectedTabPushed == true` where you read the flag.
+- **`TabScopeModifier` is removed.** Use `TabRouting(tabPresenter:tabs:)`, which it duplicated.
+- **`splitViewScope(for:items:sheet:alert:)` loses `sheet:`**, and `SplitViewScopeModifier` its
+  `Sheet` parameter. `routing(...)` above it attaches the sheet now.
+- **`routing(...)`'s full overload requires `FullScreenCover: FullScreenCoverable`** (it was
+  `Identifiable & Hashable`). A cover type without a `body` could never be shown.
+
 
 All notable changes to this project are recorded in this file.
 

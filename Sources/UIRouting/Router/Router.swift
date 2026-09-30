@@ -59,7 +59,11 @@ public final class Router<Route: Routable> {
     /// The destinations pushed onto the stack, in order.
     public var path: [Route] = []
 
-    public init() {}
+    /// Creates an empty one.
+    ///
+    /// It is `nonisolated` so that `@State private var x = ...()` in a generic view can create
+    /// it: the `@State` macro evaluates that initial value outside the main actor.
+    nonisolated public init() {}
 
     /// Pushes a destination onto the stack.
     public func navigate(to route: Route) {

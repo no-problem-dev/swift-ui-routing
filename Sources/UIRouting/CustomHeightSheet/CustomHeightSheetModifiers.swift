@@ -8,7 +8,6 @@ import SwiftUI
 /// nothing for the machinery.
 struct CustomHeightSheetModifierIfNeeded<CustomSheet: CustomHeightSheetable>: ViewModifier {
     @Bindable var presenter: CustomHeightSheetPresenter<CustomSheet>
-    @Environment(\.self) private var environment
 
     func body(content: Content) -> some View {
         if CustomSheet.self != Never.self {
@@ -28,11 +27,20 @@ struct CustomHeightSheetModifierIfNeeded<CustomSheet: CustomHeightSheetable>: Vi
 // MARK: - Public Custom Height Sheet Presenter Modifier
 
 public extension View {
-    /// Creates a custom-height sheet presenter for the sheet layer.
+    /// Creates a custom-height sheet presenter, publishes it on one layer, and attaches the sheet.
     ///
-    /// Apply it inside a sheet that opens a further custom-height sheet; the presenter it
-    /// installs is the one `context: .sheet` reads back.
+    /// The layer is spelled out at both ends: the `context` given here must be the one the reader
+    /// asks for, or the reader gets a presenter nothing is bound to and `present(_:)` shows
+    /// nothing. It has no default for that reason.
+    ///
+    /// The presenter reaches only the views below this modifier, so apply it to the parent of the
+    /// view that reads it, not to the reader's own body.
     /// ```swift
+    /// // The parent installs the presenter...
+    /// SettingsSheet()
+    ///     .customHeightSheetPresenter(for: AppCustomSheet.self, context: .sheet)
+    ///
+    /// // ...and the view below reads it back on the same layer.
     /// struct SettingsSheet: View {
     ///     @Environment(.customHeightSheet(AppCustomSheet.self, context: .sheet)) private var presenter
     ///
@@ -40,31 +48,36 @@ public extension View {
     ///         Button("Show Filter") {
     ///             presenter.present(.filter)
     ///         }
-    ///         .customHeightSheetPresenter(for: AppCustomSheet.self)
     ///     }
     /// }
     /// ```
     ///
-    /// - Parameter type: The sheet type this presenter handles.
-    func customHeightSheetPresenter<Sheet: CustomHeightSheetable>(for type: Sheet.Type) -> some View {
-        modifier(CustomHeightSheetPresenterModifier<Sheet>())
+    /// - Parameters:
+    ///   - type: The sheet type this presenter handles.
+    ///   - context: The layer the presenter is published on; readers must ask for the same one.
+    func customHeightSheetPresenter<Sheet: CustomHeightSheetable>(
+        for type: Sheet.Type,
+        context: PresentationContext
+    ) -> some View {
+        modifier(CustomHeightSheetPresenterModifier<Sheet>(context: context))
     }
 }
 
-/// Owns a custom-height sheet presenter for the sheet layer.
+/// Owns a custom-height sheet presenter and attaches the sheet for it.
 struct CustomHeightSheetPresenterModifier<Sheet: CustomHeightSheetable>: ViewModifier {
+    let context: PresentationContext
     @State private var presenter = CustomHeightSheetPresenter<Sheet>()
 
     func body(content: Content) -> some View {
         @Bindable var bindablePresenter = presenter
 
         content
-            .environment(\.[customHeightSheetPresenter: CustomHeightSheetPresenterSpecifier<Sheet>(context: .sheet)], presenter)
+            .environment(\.[customHeightSheetPresenter: CustomHeightSheetPresenterSpecifier<Sheet>(context: context)], presenter)
             .sheet(item: $bindablePresenter.presentedSheet) { sheet in
                 sheet.body
                     .presentationDetents(sheet.detents)
                     .transformEnvironment(\.self) { env in
-                        env[customHeightSheetPresenter: CustomHeightSheetPresenterSpecifier<Sheet>(context: .sheet)] = presenter
+                        env[customHeightSheetPresenter: CustomHeightSheetPresenterSpecifier<Sheet>(context: context)] = presenter
                     }
             }
     }

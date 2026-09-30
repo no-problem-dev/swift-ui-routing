@@ -84,6 +84,8 @@ struct ContentView: View {
 }
 ```
 
+`routing(...)` は Presenter を環境に入れ、その Presenter が出すシート（カバー・高さ指定のシートも）を取り付けるところまで行う。`.sheet(item:)` は書かない。
+
 AlertPresenter を 2 つ渡すのは、シートに覆われたビューから SwiftUI がアラートを出せないため。シート階層には専用のものが要る。
 
 ### 3. ビューで使う
@@ -135,14 +137,32 @@ enum AppTab: Tabbable {
 TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
 ```
 
-タブ切り替えと画面遷移を一度に行う。コールバックは切り替えのアニメーションが終わってから走るので、push が飲み込まれない:
+タブ切り替えと画面遷移を一度に行う。コールバックはそのタブの Router ができてから走るので、タブが初めて表示される前に頼んだ push も捨てられず待つ。`TabRouting` の外（プレビューなど）では `nil` になる:
 
 ```swift
 @Environment(.tab(AppTab.self)) private var tabPresenter
 
-tabPresenter.select(.home) { context in
+tabPresenter?.select(.home) { context in
     context.router.navigate(to: .detail(id: "123"))
 }
+```
+
+### アプリの外から来た遷移
+
+URL・通知・ウィジェット・App Intent は、どれも `TabDestination`（タブと、そのルートに積む画面）に変える。URL が何を指すかはアプリの契約なので変換はアプリが書き、Presenter はその結果を開く。タブの Router がまだ無ければ、できるまで待つ。最初の描画より前に届く入口から触れるよう、Presenter はビューでなくアプリの側で持つ。
+
+```swift
+enum AppLink {
+    static func destination(for url: URL) -> TabDestination<AppTab>? {
+        guard url.host() == "detail" else { return nil }
+        return TabDestination(tab: .home, path: [.detail(id: url.lastPathComponent)])
+    }
+}
+
+TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
+    .onOpenURL { url in
+        tabPresenter.open(url, resolve: AppLink.destination(for:))
+    }
 ```
 
 ## モーダル表示
@@ -165,7 +185,7 @@ enum AppFullScreenCover: FullScreenCoverable {
     }
 }
 
-// 全部入りの routing で注入する。
+// 全部入りの routing で注入する。カバーの取り付けもこれが行う。
 ContentView()
     .routing(
         router: router,
@@ -206,11 +226,13 @@ enum AppCustomSheet: CustomHeightSheetable {
     }
 }
 
-// このモディファイアが Presenter の生成とシートの取り付けまで行う。
+// routing を使わない場合: このモディファイアが Presenter の生成、指定した階層への公開、
+// シートの取り付けまで行う。読む側のビューの親に付ける。
 ContentView()
-    .customHeightSheetPresenter(for: AppCustomSheet.self)
+    .customHeightSheetPresenter(for: AppCustomSheet.self, context: .navigation)
 
-@Environment(.customHeightSheet(AppCustomSheet.self, context: .sheet)) private var presenter
+// ContentView の中。上と同じ階層を読む。
+@Environment(.customHeightSheet(AppCustomSheet.self)) private var presenter
 presenter.present(.picker)
 ```
 

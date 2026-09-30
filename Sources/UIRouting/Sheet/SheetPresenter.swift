@@ -27,7 +27,8 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // 2. Create the presenter and inject it into the environment.
+/// // 2. Create the presenter and inject it. `routing(...)` also attaches the sheet, so
+/// //    there is no `.sheet(item:)` to write.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -36,17 +37,7 @@ import SwiftUI
 ///         alertPresenterOnSheet: AlertPresenter<Alert>()
 ///     )
 ///
-/// // 3. Attach the sheet modifier.
-/// var body: some View {
-///     @Bindable var sheet = sheetPresenter
-///
-///     MainView()
-///         .sheet(item: $sheet.presentedSheet) { sheet in
-///             sheet.body
-///         }
-/// }
-///
-/// // 4. Present a sheet.
+/// // 3. Present a sheet.
 /// struct MainView: View {
 ///     @Environment(.sheet(Sheet.self)) private var sheetPresenter
 ///
@@ -63,7 +54,11 @@ public final class SheetPresenter<Sheet> where Sheet: Sheetable {
     /// The sheet currently up, or `nil` when none is.
     public var presentedSheet: Sheet?
 
-    public init() {}
+    /// Creates an empty one.
+    ///
+    /// It is `nonisolated` so that `@State private var x = ...()` in a generic view can create
+    /// it: the `@State` macro evaluates that initial value outside the main actor.
+    nonisolated public init() {}
 
     /// Puts a sheet up.
     public func present(_ sheet: Sheet) {

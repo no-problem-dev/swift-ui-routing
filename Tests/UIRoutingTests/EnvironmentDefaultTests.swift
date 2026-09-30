@@ -14,7 +14,7 @@ import SwiftUI
 final class EnvironmentDefaultTests: XCTestCase {
 
     func testRouterFallbackKeepsWhatWasPushedOntoIt() {
-        var environment = EnvironmentValues()
+        let environment = EnvironmentValues()
 
         let pushedFrom = environment[router: RouterSpecifier<FallbackRoute>()]
         pushedFrom.navigate(to: .detail)
@@ -26,7 +26,7 @@ final class EnvironmentDefaultTests: XCTestCase {
     }
 
     func testSheetPresenterFallbackKeepsWhatWasPresentedOnIt() {
-        var environment = EnvironmentValues()
+        let environment = EnvironmentValues()
 
         let presentedFrom = environment[sheetPresenter: SheetPresenterSpecifier<FallbackSheet>()]
         presentedFrom.present(.filter)
@@ -37,7 +37,7 @@ final class EnvironmentDefaultTests: XCTestCase {
     }
 
     func testAlertPresenterFallbackKeepsWhatWasRaisedOnIt() {
-        var environment = EnvironmentValues()
+        let environment = EnvironmentValues()
 
         let raisedFrom = environment[alertPresenter: AlertPresenterSpecifier<FallbackAlert>(context: .navigation)]
         raisedFrom.present(.signOut)
@@ -49,7 +49,7 @@ final class EnvironmentDefaultTests: XCTestCase {
     }
 
     func testFullScreenCoverAndCustomHeightSheetAndSplitViewFallbacksAreAlsoStable() {
-        var environment = EnvironmentValues()
+        let environment = EnvironmentValues()
 
         let cover = environment[fullScreenCoverPresenter: FullScreenCoverPresenterSpecifier<FallbackCover>()]
         XCTAssertTrue(environment[fullScreenCoverPresenter: FullScreenCoverPresenterSpecifier<FallbackCover>()] === cover)
@@ -62,7 +62,7 @@ final class EnvironmentDefaultTests: XCTestCase {
     }
 
     func testTheNavigationAndSheetLayersDoNotShareOneFallback() {
-        var environment = EnvironmentValues()
+        let environment = EnvironmentValues()
 
         let onNavigation = environment[alertPresenter: AlertPresenterSpecifier<FallbackAlert>(context: .navigation)]
         let onSheet = environment[alertPresenter: AlertPresenterSpecifier<FallbackAlert>(context: .sheet)]
@@ -71,7 +71,7 @@ final class EnvironmentDefaultTests: XCTestCase {
     }
 
     func testTwoRouteTypesDoNotShareOneFallback() {
-        var environment = EnvironmentValues()
+        let environment = EnvironmentValues()
 
         let forRoutes = environment[router: RouterSpecifier<FallbackRoute>()]
         let forOtherRoutes = environment[router: RouterSpecifier<OtherFallbackRoute>()]

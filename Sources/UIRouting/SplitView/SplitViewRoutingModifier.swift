@@ -32,7 +32,7 @@ public struct SplitViewRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // Publish them, passing the environment's router straight through.
+            // Publish them and attach the modals, passing the environment's router straight through.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -42,12 +42,6 @@ public struct SplitViewRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: SplitViewPresenter<Never>()
             )
-            // Sheets.
-            .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // Full-screen covers.
-            .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // Custom-height sheets.
-            .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
             // Alerts.
             .modifier(AlertModifierIfNeeded(presenter: alertPresenterOnNavigation))
     }

@@ -32,7 +32,7 @@ public struct ThreeColumnContentRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // Publish them to the environment.
+            // Publish them to the environment and attach the modals.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -42,12 +42,6 @@ public struct ThreeColumnContentRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: splitViewPresenter
             )
-            // Sheets.
-            .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // Full-screen covers.
-            .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // Custom-height sheets.
-            .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
             // Alerts.
             .modifier(AlertModifierIfNeeded(presenter: alertPresenterOnNavigation))
     }
@@ -84,7 +78,7 @@ public struct ThreeColumnDetailRoutingModifier<
 
     public func body(content: Content) -> some View {
         content
-            // Publish them to the environment.
+            // Publish them to the environment and attach the modals.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -94,12 +88,6 @@ public struct ThreeColumnDetailRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: splitViewPresenter
             )
-            // Sheets.
-            .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // Full-screen covers.
-            .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // Custom-height sheets.
-            .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
             // Alerts.
             .modifier(AlertModifierIfNeeded(presenter: alertPresenterOnNavigation))
     }

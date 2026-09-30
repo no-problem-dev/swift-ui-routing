@@ -17,7 +17,10 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // From inside a sheet
+/// // From inside a sheet: the sheet's parent installs a presenter on the `.sheet` layer.
+/// SettingsSheet()
+///     .fullScreenCoverPresenter(for: AppCover.self, context: .sheet)
+///
 /// struct SettingsSheet: View {
 ///     @Environment(.fullScreenCover(AppCover.self, context: .sheet)) private var presenter
 ///
@@ -25,7 +28,6 @@ import SwiftUI
 ///         Button("Show Another Cover") {
 ///             presenter.present(.onboarding)
 ///         }
-///         .fullScreenCoverPresenter(for: AppCover.self)
 ///     }
 /// }
 /// ```

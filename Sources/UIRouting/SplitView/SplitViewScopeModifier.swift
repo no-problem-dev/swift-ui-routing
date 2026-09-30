@@ -3,9 +3,9 @@ import SwiftUI
 /// Binds an injected split-view presenter to a navigation split view and wires alerts in.
 ///
 /// Everything it uses comes from the environment, so one of the `routing(...)` methods must have
-/// run above it.
+/// run above it. That method also attaches the sheets, so this modifier does not.
 ///
-/// Apply it through `splitViewScope(for:items:sheet:alert:)`.
+/// Apply it through `splitViewScope(for:items:alert:)`.
 /// ```swift
 /// ContentView()
 ///     .splitViewScope(
@@ -14,10 +14,9 @@ import SwiftUI
 ///         alert: AppAlert.self
 ///     )
 /// ```
-public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Alert: Alertable>: ViewModifier {
+public struct SplitViewScopeModifier<Sidebar: SidebarItem, Alert: Alertable>: ViewModifier {
     @Environment private var splitViewPresenter: SplitViewPresenter<Sidebar>
     @Environment private var router: Router<Sidebar.DetailRoute>
-    @Environment private var sheetPresenter: SheetPresenter<Sheet>
 
     private let sidebarItems: [Sidebar]
 
@@ -25,12 +24,10 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
         self.sidebarItems = sidebarItems
         self._splitViewPresenter = Environment(.splitView(Sidebar.self))
         self._router = Environment(.router(Sidebar.DetailRoute.self))
-        self._sheetPresenter = Environment(.sheet(Sheet.self))
     }
 
     public func body(content: Content) -> some View {
         @Bindable var presenterBinding = splitViewPresenter
-        @Bindable var sheetBinding = sheetPresenter
 
         NavigationSplitView {
             // Sidebar column.
@@ -65,7 +62,6 @@ public struct SplitViewScopeModifier<Sidebar: SidebarItem, Sheet: Sheetable, Ale
                     .routingAlert(for: Alert.self)
             }
         }
-        .modifier(SheetModifierIfNeeded(presenter: sheetBinding))
     }
 }
 
@@ -90,14 +86,12 @@ public extension View {
     /// - Parameters:
     ///   - type: The sidebar type whose routing types should be used.
     ///   - items: The rows of the sidebar, in order.
-    ///   - sheet: The sheet type to wire in, or `Never` for none.
     ///   - alert: The alert type wired into each detail view.
-    func splitViewScope<Sidebar: SidebarItem, Sheet: Sheetable, Alert: Alertable>(
+    func splitViewScope<Sidebar: SidebarItem, Alert: Alertable>(
         for type: Sidebar.Type,
         items: [Sidebar],
-        sheet: Sheet.Type = Never.self,
         alert: Alert.Type
     ) -> some View {
-        modifier(SplitViewScopeModifier<Sidebar, Sheet, Alert>(sidebarItems: items))
+        modifier(SplitViewScopeModifier<Sidebar, Alert>(sidebarItems: items))
     }
 }

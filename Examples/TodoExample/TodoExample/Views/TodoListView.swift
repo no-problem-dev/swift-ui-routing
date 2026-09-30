@@ -70,7 +70,7 @@ struct TodoListView: View {
             }
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    tabPresenter.select(.settings)
+                    tabPresenter?.select(.settings)
                 } label: {
                     Image(systemName: "gearshape")
                 }

@@ -12,7 +12,7 @@ struct SettingsView: View {
                 Section("タブ切り替えとナビゲーション") {
                     // 基本: タブ切り替えのみ
                     Button {
-                        tabPresenter.select(.todoList)
+                        tabPresenter?.select(.todoList)
                     } label: {
                         Label("タスクタブへ移動", systemImage: "checklist")
                     }
@@ -26,7 +26,7 @@ struct SettingsView: View {
                             category: .work
                         )
 
-                        tabPresenter.select(.todoList) { context in
+                        tabPresenter?.select(.todoList) { context in
                             context.router.navigate(to: .todoDetail(todo: sampleTodo))
                         }
                     } label: {

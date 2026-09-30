@@ -80,7 +80,9 @@ enum AppAlert: Alertable {
 
 ## Create the router and presenters
 
-Make them once, where the app starts, and inject them with `routing(...)`.
+Make them once, where the app starts, and inject them with `routing(...)`. It publishes each
+presenter and attaches the sheet, cover, or custom-height sheet it drives, so there is no
+`.sheet(item:)` to write.
 
 ```swift
 @main
@@ -109,9 +111,8 @@ which one it means.
 
 ## Install a routing scope
 
-`routing(...)` only publishes the objects. The navigation stack itself comes from
-`routingScope(for:alert:)`, which binds the router's path and applies the alert modifier to
-every screen it pushes.
+The navigation stack comes from `routingScope(for:alert:)`, which binds the router's path and
+applies the alert modifier to every screen it pushes.
 
 ```swift
 struct ContentView: View {
@@ -201,12 +202,47 @@ struct RootView: View {
 Anything a tab leaves unspecified defaults to `Never`, which switches that feature off for it.
 
 To switch tabs and push in one gesture, hand ``TabPresenter/select(_:then:)`` a callback. It runs
-after the tab transition, which is what keeps the push from being swallowed by the animation.
+once that tab's router exists, which on a cold launch is only after the tab first appears. The
+tab lookup is `nil` outside a ``TabRouting``, in a preview for instance.
 
 ```swift
 @Environment(.tab(AppTab.self)) private var tabPresenter
 
-tabPresenter.select(.home) { context in
+tabPresenter?.select(.home) { context in
     context.router.navigate(to: .detail(id: "123"))
 }
 ```
+
+## Open links from outside the app
+
+A URL, a notification, a widget, or an App Intent all end up as a ``TabDestination``: the tab to
+show and the screens to stack on its root. What a URL means is the app's own contract, so the app
+writes the conversion; ``TabPresenter`` opens the result, waiting for the tab's router when the
+request arrives before the view tree is up.
+
+```swift
+enum AppLink {
+    static func destination(for url: URL) -> TabDestination<AppTab>? {
+        guard url.host() == "detail" else { return nil }
+        return TabDestination(tab: .home, path: [.detail(id: url.lastPathComponent)])
+    }
+}
+
+@main
+struct MyApp: App {
+    // Held by the app, not a view, so a notification handled before the first frame can reach it.
+    @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
+
+    var body: some Scene {
+        WindowGroup {
+            TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
+                .onOpenURL { url in
+                    tabPresenter.open(url, resolve: AppLink.destination(for:))
+                }
+        }
+    }
+}
+```
+
+Only the latest waiting request is kept: a later `open`, `select(_:)`, or `select(_:then:)`
+replaces it.

@@ -1,40 +1,5 @@
 import SwiftUI
 
-/// Builds a tab view from a presenter already in the environment and a list of tabs.
-///
-/// Prefer the `TabRouting` view, which owns the presenter and publishes it for you.
-/// ```swift
-/// @State private var tabPresenter = TabPresenter(initialTab: AppTab.home)
-///
-/// var body: some View {
-///     TabRouting(tabPresenter: tabPresenter, tabs: [.home, .search, .profile])
-/// }
-/// ```
-public struct TabScopeModifier<Tab: Tabbable>: ViewModifier {
-    @Environment private var tabPresenter: TabPresenter<Tab>
-    private let tabs: [Tab]
-
-    public init(tabs: [Tab]) {
-        self.tabs = tabs
-        self._tabPresenter = Environment(.tab(Tab.self))
-    }
-
-    public func body(content: Content) -> some View {
-        @Bindable var binding = tabPresenter
-
-        TabView(selection: $binding.selectedTab) {
-            ForEach(tabs) { tab in
-                SwiftUI.Tab(value: tab, role: tab.tabRole) {
-                    tab.contentView
-                        .tabRouting(tab: tab)
-                } label: {
-                    tab.tabLabel
-                }
-            }
-        }
-    }
-}
-
 /// A tab view whose tabs each arrive with their own routing already wired up.
 ///
 /// It is built on the declarative `Tab(value:role:)` API, so Liquid Glass modifiers such as

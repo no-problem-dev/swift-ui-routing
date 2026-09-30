@@ -44,7 +44,11 @@ public final class AlertPresenter<Alert: Alertable> {
     /// Whether an alert is on screen. SwiftUI writes back to it when the user dismisses one.
     public var isPresented: Bool = false
 
-    public init() {}
+    /// Creates an empty one.
+    ///
+    /// It is `nonisolated` so that `@State private var x = ...()` in a generic view can create
+    /// it: the `@State` macro evaluates that initial value outside the main actor.
+    nonisolated public init() {}
 
     /// Puts an alert on screen, replacing any that is already there.
     public func present(_ alert: Alert) {

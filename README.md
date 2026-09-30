@@ -84,6 +84,9 @@ struct ContentView: View {
 }
 ```
 
+`routing(...)` publishes each presenter and attaches the sheet (and cover, and custom-height
+sheet) it drives, so there is no `.sheet(item:)` to write.
+
 Two alert presenters, not one: SwiftUI cannot raise an alert from a view a sheet already covers,
 so the sheet layer gets its own.
 
@@ -137,15 +140,37 @@ enum AppTab: Tabbable {
 TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
 ```
 
-Switching tab and pushing in one gesture — the callback runs after the transition, so the push
-is not swallowed by the animation:
+Switching tab and pushing in one gesture — the callback runs once that tab's router exists, so a
+push asked for before the tab first appears waits instead of being dropped. The lookup is `nil`
+outside `TabRouting` (in a preview, say):
 
 ```swift
 @Environment(.tab(AppTab.self)) private var tabPresenter
 
-tabPresenter.select(.home) { context in
+tabPresenter?.select(.home) { context in
     context.router.navigate(to: .detail(id: "123"))
 }
+```
+
+### Links from outside the app
+
+URLs, notifications, widgets, and App Intents all land on a `TabDestination` — a tab plus the
+screens to stack on its root. The app owns what its URLs mean; the presenter opens the result and
+waits for the tab's router if it is not there yet. Keep the presenter at app level so entry points
+that fire before the first frame can reach it.
+
+```swift
+enum AppLink {
+    static func destination(for url: URL) -> TabDestination<AppTab>? {
+        guard url.host() == "detail" else { return nil }
+        return TabDestination(tab: .home, path: [.detail(id: url.lastPathComponent)])
+    }
+}
+
+TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
+    .onOpenURL { url in
+        tabPresenter.open(url, resolve: AppLink.destination(for:))
+    }
 ```
 
 ## Modal Presentations
@@ -168,7 +193,7 @@ enum AppFullScreenCover: FullScreenCoverable {
     }
 }
 
-// Inject it with the full routing overload.
+// Inject it with the full routing overload, which also attaches the cover.
 ContentView()
     .routing(
         router: router,
@@ -209,11 +234,13 @@ enum AppCustomSheet: CustomHeightSheetable {
     }
 }
 
-// This modifier creates the presenter and attaches the sheet.
+// Or, without `routing(...)`: this modifier creates the presenter, publishes it on the layer
+// you name, and attaches the sheet. Apply it to the parent of the view that reads it.
 ContentView()
-    .customHeightSheetPresenter(for: AppCustomSheet.self)
+    .customHeightSheetPresenter(for: AppCustomSheet.self, context: .navigation)
 
-@Environment(.customHeightSheet(AppCustomSheet.self, context: .sheet)) private var presenter
+// Inside ContentView — the same layer as above.
+@Environment(.customHeightSheet(AppCustomSheet.self)) private var presenter
 presenter.present(.picker)
 ```
 

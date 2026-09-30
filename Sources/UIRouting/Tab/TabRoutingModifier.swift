@@ -14,7 +14,7 @@ public struct TabRoutingModifier<
     CustomSheet: CustomHeightSheetable
 >: ViewModifier where Tab.Route == Route {
 
-    @Environment private var tabPresenter: TabPresenter<Tab>
+    @Environment private var tabPresenter: TabPresenter<Tab>?
 
     private let currentTab: Tab
 
@@ -35,7 +35,7 @@ public struct TabRoutingModifier<
         content
             // A navigation stack, but only if this tab declares routes.
             .modifier(NavigationScopeModifierIfNeeded<Tab, Route, Alert>(tab: currentTab))
-            // Publish everything to the environment.
+            // Publish everything to the environment and attach the modals.
             .routing(
                 router: router,
                 sheetPresenter: sheetPresenter,
@@ -45,15 +45,10 @@ public struct TabRoutingModifier<
                 alertPresenterOnSheet: alertPresenterOnSheet,
                 splitViewPresenter: SplitViewPresenter<Never>()
             )
-            // Sheets.
-            .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
-            // Full-screen covers.
-            .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
-            // Custom-height sheets.
-            .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
-            // Let the presenter reach this tab's router from anywhere else.
+            // Let the presenter reach this tab's router from anywhere else. Outside a
+            // `TabRouting` there is no presenter to tell, and the tab still routes on its own.
             .onAppear {
-                tabPresenter.registerRouter(router, for: currentTab)
+                tabPresenter?.registerRouter(router, for: currentTab)
             }
     }
 }

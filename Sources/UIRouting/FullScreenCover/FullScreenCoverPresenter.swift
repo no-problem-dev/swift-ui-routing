@@ -19,7 +19,8 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // 2. Create the presenter and inject it into the environment.
+/// // 2. Create the presenter and inject it. `routing(...)` also attaches the cover, so
+/// //    there is no `.fullScreenCover(item:)` to write.
 /// ContentView()
 ///     .routing(
 ///         router: Router<Screen>(),
@@ -31,18 +32,7 @@ import SwiftUI
 ///         splitViewPresenter: SplitViewPresenter<Never>()
 ///     )
 ///
-/// // 3. Attach the cover modifier.
-/// var body: some View {
-///     MainView()
-///         .fullScreenCover(item: Binding(
-///             get: { fullScreenCoverPresenter?.presentedCover },
-///             set: { fullScreenCoverPresenter?.presentedCover = $0 }
-///         )) { cover in
-///             cover.body
-///         }
-/// }
-///
-/// // 4. Present a cover.
+/// // 3. Present a cover.
 /// struct MainView: View {
 ///     @Environment(.fullScreenCover(FullScreenCover.self)) private var fullScreenCoverPresenter
 ///
@@ -59,7 +49,11 @@ public final class FullScreenCoverPresenter<Cover> where Cover: Identifiable & H
     /// The cover currently up, or `nil` when none is.
     public var presentedCover: Cover?
 
-    public init() {}
+    /// Creates an empty one.
+    ///
+    /// It is `nonisolated` so that `@State private var x = ...()` in a generic view can create
+    /// it: the `@State` macro evaluates that initial value outside the main actor.
+    nonisolated public init() {}
 
     /// Puts a cover up.
     public func present(_ cover: Cover) {

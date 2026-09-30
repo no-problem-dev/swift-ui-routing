@@ -17,7 +17,10 @@ import SwiftUI
 ///     }
 /// }
 ///
-/// // From inside a sheet
+/// // From inside a sheet: the sheet's parent installs a presenter on the `.sheet` layer.
+/// SettingsSheet()
+///     .sheetPresenter(for: AppSheet.self, context: .sheet)
+///
 /// struct SettingsSheet: View {
 ///     @Environment(.sheet(AppSheet.self, context: .sheet)) private var sheetPresenter
 ///
@@ -25,7 +28,6 @@ import SwiftUI
 ///         Button("Show Another Sheet") {
 ///             sheetPresenter.present(.about)
 ///         }
-///         .sheetPresenter(for: AppSheet.self, context: .sheet)
 ///     }
 /// }
 /// ```

@@ -1,6 +1,11 @@
 import SwiftUI
 
-/// Puts a router and every presenter into the environment of the views below it.
+/// Puts a router and every presenter into the environment of the views below it, and attaches
+/// the sheet, full-screen cover, and custom-height sheet that those presenters drive.
+///
+/// Publishing a presenter and attaching the modal it drives are one step here: a presenter in the
+/// environment with nothing bound to it takes `present(_:)` calls and shows nothing. A slot typed
+/// `Never` attaches nothing.
 ///
 /// Apply it through one of the `routing(...)` methods rather than constructing it directly.
 public struct RoutingModifier<
@@ -14,7 +19,7 @@ public struct RoutingModifier<
     where
     Sheet: Sheetable,
     CustomHeightSheet: CustomHeightSheetable,
-    FullScreenCover: Identifiable & Hashable
+    FullScreenCover: FullScreenCoverable
 {
     private let router: Router<Route>
     private let sheetPresenter: SheetPresenter<Sheet>
@@ -44,6 +49,11 @@ public struct RoutingModifier<
 
     public func body(content: Content) -> some View {
         content
+            // Attached below the environment injection, so the presented views see every
+            // presenter and the router too.
+            .modifier(SheetModifierIfNeeded(presenter: sheetPresenter))
+            .modifier(FullScreenCoverModifierIfNeeded(presenter: fullScreenCoverPresenter))
+            .modifier(CustomHeightSheetModifierIfNeeded(presenter: customHeightSheetPresenter))
             .transformEnvironment(\.self) { environment in
                 environment[router: RouterSpecifier<Route>()] = router
                 environment[sheetPresenter: SheetPresenterSpecifier<Sheet>()] = sheetPresenter
@@ -57,7 +67,12 @@ public struct RoutingModifier<
 }
 
 public extension View {
-    /// Injects a router and every presenter into the environment.
+    /// Injects a router and every presenter into the environment, and attaches the sheet,
+    /// full-screen cover, and custom-height sheet they drive.
+    ///
+    /// Do not attach `.sheet(item:)` or `.fullScreenCover(item:)` for these presenters yourself;
+    /// this already does, and a second one would present the same value twice. Alerts are wired
+    /// by `routingScope(for:alert:)` instead, because they must sit on every pushed screen.
     ///
     /// Use this overload when a screen needs the full set; the shorter one covers navigation,
     /// sheets, and alerts only.
@@ -98,7 +113,7 @@ public extension View {
         where
         Sheet: Sheetable,
         CustomHeightSheet: CustomHeightSheetable,
-        FullScreenCover: Identifiable & Hashable
+        FullScreenCover: FullScreenCoverable
     {
         modifier(RoutingModifier(
             router: router,
@@ -111,7 +126,8 @@ public extension View {
         ))
     }
 
-    /// Injects a router, a sheet presenter, and both alert presenters into the environment.
+    /// Injects a router, a sheet presenter, and both alert presenters into the environment, and
+    /// attaches the sheet the sheet presenter drives.
     ///
     /// Full-screen covers, custom-height sheets, and split views are filled in with `Never`,
     /// so reaching for any of them later means switching to the full overload.

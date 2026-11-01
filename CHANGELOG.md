@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+- **`Sheetable.presentationStyle`** and **`SheetPresentationStyle`** (`.sheet`,
+  `.fullScreenCover`, `.fullScreenCoverWhenRegular`): a sheet case can ask to cover the whole
+  screen, or to do so only when the presenting view is regular width — a paywall that should fill
+  an iPad but stay a sheet on iPhone. The default is `.sheet`, so existing conformances are
+  unchanged. The same `SheetPresenter` drives both forms, so `present(_:)` and `dismiss()` work as
+  before, and the presented view still reads the presenter from the environment. On macOS every
+  style is a sheet.
+
 ## [3.0.0] - 2026-09-30
 
 Presenting now works the way the README builds it, and navigation that arrives before a tab's

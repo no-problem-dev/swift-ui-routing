@@ -71,6 +71,7 @@ alert presenters, so an alert raised from inside a sheet still appears.
 
 - ``SheetPresenter``
 - ``Sheetable``
+- ``SheetPresentationStyle``
 - ``SheetEnvironmentKey``
 
 ### Alerts

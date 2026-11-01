@@ -88,6 +88,13 @@ enum ConsumerSheet: Sheetable {
     case compose
     case filter(category: String)
 
+    var presentationStyle: SheetPresentationStyle {
+        switch self {
+        case .compose: .fullScreenCoverWhenRegular
+        case .filter: .sheet
+        }
+    }
+
     var body: some View { EmptyView() }
 }
 

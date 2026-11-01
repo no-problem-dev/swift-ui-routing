@@ -29,6 +29,26 @@ final class PresentationWiringTests: XCTestCase {
         XCTAssertTrue(waitUntil { seen.names.contains("sheet") })
     }
 
+    func testASheetThatAsksForAFullScreenCoverIsPresentedAsASheetOnMacOS() {
+        let seen = Seen()
+        let sheets = SheetPresenter<WiringSheet>()
+
+        host(
+            Color.clear.routing(
+                router: Router<WiringRoute>(),
+                sheetPresenter: sheets,
+                alertPresenterOnNavigation: AlertPresenter<Never>(),
+                alertPresenterOnSheet: AlertPresenter<Never>()
+            )
+            .environment(seen)
+        )
+        sheets.present(.paywall)
+
+        XCTAssertTrue(waitUntil { seen.names.contains("paywall") })
+        sheets.dismiss()
+        XCTAssertTrue(waitUntil { !seen.names.contains("paywall") })
+    }
+
     func testRoutingAttachesTheCoverAndTheCustomHeightSheetItPublishes() {
         let seen = Seen()
         let covers = FullScreenCoverPresenter<WiringCover>()
@@ -169,7 +189,21 @@ private enum WiringRoute: Routable {
 @MainActor
 private enum WiringSheet: Sheetable {
     case filter
-    var body: some View { Marker(name: "sheet") }
+    case paywall
+
+    var presentationStyle: SheetPresentationStyle {
+        switch self {
+        case .filter: .sheet
+        case .paywall: .fullScreenCoverWhenRegular
+        }
+    }
+
+    var body: some View {
+        switch self {
+        case .filter: Marker(name: "sheet")
+        case .paywall: Marker(name: "paywall")
+        }
+    }
 }
 
 @MainActor

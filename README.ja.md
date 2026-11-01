@@ -167,6 +167,32 @@ TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
 
 ## モーダル表示
 
+### iPad でだけ全画面にする
+
+`Sheetable` のケースは、シートでなく画面全体を覆うよう指定できる。presenter・`present(_:)`・
+`dismiss()` はそのまま使える。
+
+```swift
+enum AppSheet: Sheetable {
+    case settings
+    case paywall
+
+    var presentationStyle: SheetPresentationStyle {
+        switch self {
+        case .settings: .sheet                    // 既定
+        case .paywall: .fullScreenCoverWhenRegular
+        }
+    }
+
+    @ViewBuilder
+    var body: some View { ... }
+}
+```
+
+`.fullScreenCoverWhenRegular` は、表示元のビューが regular 幅（iPad）なら全画面カバー、
+compact 幅（iPhone や、狭いウインドウの iPad）ならシートになる。`.fullScreenCover` はどの幅でも
+全画面。macOS ではどれもシートになる。
+
 ### FullScreenCover
 
 macOS にはフルスクリーンカバーが無いため、通常のシートとして表示される。

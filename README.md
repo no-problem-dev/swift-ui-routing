@@ -175,6 +175,32 @@ TabRouting(tabPresenter: tabPresenter, tabs: [.home, .settings])
 
 ## Modal Presentations
 
+### Full screen on iPad only
+
+A `Sheetable` case can ask to cover the screen instead of floating as a sheet. The presenter,
+`present(_:)`, and `dismiss()` stay the same.
+
+```swift
+enum AppSheet: Sheetable {
+    case settings
+    case paywall
+
+    var presentationStyle: SheetPresentationStyle {
+        switch self {
+        case .settings: .sheet                    // the default
+        case .paywall: .fullScreenCoverWhenRegular
+        }
+    }
+
+    @ViewBuilder
+    var body: some View { ... }
+}
+```
+
+`.fullScreenCoverWhenRegular` is a full-screen cover when the presenting view is regular width
+(iPad) and a sheet when it is compact (iPhone, or iPad in a narrow window). `.fullScreenCover`
+covers the screen at every width. On macOS every style is a sheet.
+
 ### FullScreenCover
 
 Presented as an ordinary sheet on macOS, which has no full-screen cover.

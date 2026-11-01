@@ -7,20 +7,52 @@ import SwiftUI
 /// Lets the routing modifiers stay uniform while a screen that declares no sheets pays nothing
 /// for the machinery.
 struct SheetModifierIfNeeded<Sheet: Sheetable>: ViewModifier {
-    @Bindable var presenter: SheetPresenter<Sheet>
+    let presenter: SheetPresenter<Sheet>
 
     func body(content: Content) -> some View {
         if Sheet.self != Never.self {
-            content.sheet(item: $presenter.presentedSheet) { sheet in
-                sheet.body
-                    .transformEnvironment(\.self) { env in
-                        // Carry the same presenter into the sheet so its content can dismiss itself.
-                        env[sheetPresenter: SheetPresenterSpecifier<Sheet>(context: .navigation)] = presenter
-                    }
-            }
+            content.modifier(SheetPresentationModifier(presenter: presenter, context: .navigation))
         } else {
             content
         }
+    }
+}
+
+// MARK: - Presentation by Style
+
+/// Puts the presenter's sheet up as a sheet or a full-screen cover, as its
+/// ``Sheetable/presentationStyle`` asks.
+///
+/// Both modifiers read the one presenter, so presenting and dismissing work the same whichever
+/// form the sheet takes. On macOS, which has no full-screen cover, everything is a sheet.
+struct SheetPresentationModifier<Sheet: Sheetable>: ViewModifier {
+    @Bindable var presenter: SheetPresenter<Sheet>
+    let context: PresentationContext
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    func body(content: Content) -> some View {
+        #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        content
+            .sheet(item: presenter.presentedSheet(in: .sheet, horizontalSizeClass: horizontalSizeClass)) { sheet in
+                presented(sheet)
+            }
+            .fullScreenCover(item: presenter.presentedSheet(in: .fullScreenCover, horizontalSizeClass: horizontalSizeClass)) { sheet in
+                presented(sheet)
+            }
+        #else
+        content.sheet(item: $presenter.presentedSheet) { sheet in
+            presented(sheet)
+        }
+        #endif
+    }
+
+    private func presented(_ sheet: Sheet) -> some View {
+        sheet.body
+            .transformEnvironment(\.self) { env in
+                // Carry the same presenter into the sheet so its content can dismiss itself.
+                env[sheetPresenter: SheetPresenterSpecifier<Sheet>(context: context)] = presenter
+            }
     }
 }
 
@@ -63,16 +95,8 @@ struct SheetPresenterModifier<Sheet: Sheetable>: ViewModifier {
     @State private var presenter = SheetPresenter<Sheet>()
 
     func body(content: Content) -> some View {
-        @Bindable var bindablePresenter = presenter
-
         content
             .environment(\.[sheetPresenter: SheetPresenterSpecifier<Sheet>(context: context)], presenter)
-            .sheet(item: $bindablePresenter.presentedSheet) { sheet in
-                sheet.body
-                    .transformEnvironment(\.self) { env in
-                        // Carry the same presenter into the sheet so its content can dismiss itself.
-                        env[sheetPresenter: SheetPresenterSpecifier<Sheet>(context: context)] = presenter
-                    }
-            }
+            .modifier(SheetPresentationModifier(presenter: presenter, context: context))
     }
 }

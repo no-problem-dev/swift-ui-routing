@@ -26,15 +26,25 @@ import SwiftUI
 ///
 /// Identity comes from the case name plus its hashable associated values, so do not write
 /// `id`, `==`, or `hash(into:)` yourself — all three are provided.
+///
+/// A case that should cover the whole screen rather than float as a sheet says so through
+/// ``presentationStyle``; see ``SheetPresentationStyle``.
 @MainActor
 public protocol Sheetable: Identifiable, Hashable {
     associatedtype Body: View
 
     /// The view shown inside the sheet.
     @ViewBuilder var body: Body { get }
+
+    /// How this screen is put up. Defaults to ``SheetPresentationStyle/sheet``.
+    var presentationStyle: SheetPresentationStyle { get }
 }
 
 // MARK: - Default Implementations
+public extension Sheetable {
+    var presentationStyle: SheetPresentationStyle { .sheet }
+}
+
 public extension Sheetable where Self: Hashable, ID == Int {
     nonisolated var id: Int {
         var hasher = Hasher()

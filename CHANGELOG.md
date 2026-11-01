@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-01
+
 ### Added
 - **`Sheetable.presentationStyle`** and **`SheetPresentationStyle`** (`.sheet`,
   `.fullScreenCover`, `.fullScreenCoverWhenRegular`): a sheet case can ask to cover the whole

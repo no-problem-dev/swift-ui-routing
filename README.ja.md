@@ -320,7 +320,7 @@ List(selection: selectedContentBinding) {
 ## ドキュメント
 
 API リファレンスとガイド:
-**[no-problem-dev.github.io/swift-ui-routing](https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/)**
+**[`Sources/UIRouting/Documentation.docc`](Sources/UIRouting/Documentation.docc)**
 
 動かせるサンプル: [TodoExample](Examples/TodoExample)（画面遷移・シート・アラート・タブ・カバー）と
 [MailExample](Examples/MailExample)（3 カラムスプリットビュー）。

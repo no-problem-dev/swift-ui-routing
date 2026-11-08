@@ -328,7 +328,7 @@ List(selection: selectedContentBinding) {
 ## Documentation
 
 Full API reference and guides:
-**[no-problem-dev.github.io/swift-ui-routing](https://no-problem-dev.github.io/swift-ui-routing/documentation/uirouting/)**
+**[`Sources/UIRouting/Documentation.docc`](Sources/UIRouting/Documentation.docc)**
 
 Runnable apps: [TodoExample](Examples/TodoExample) (navigation, sheets, alerts, tabs, covers) and
 [MailExample](Examples/MailExample) (3-column split view).

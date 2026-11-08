@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-11-08
+
+### Changed
+
+- swift-docc-plugin への依存を外した（DocC は Xcode で開く）
+
 ## [3.1.0] - 2026-11-01
 
 ### Added
@@ -429,7 +435,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - GenericEnvironmentKey — type-safe access to environment values
   - EnvironmentSubscript — dynamic environment value resolution
 
-[Unreleased]: https://github.com/no-problem-dev/swift-ui-routing/compare/2.1.1...HEAD
+[Unreleased]: https://github.com/no-problem-dev/swift-ui-routing/compare/3.1.1...HEAD
+[3.1.1]: https://github.com/no-problem-dev/swift-ui-routing/compare/3.1.0...3.1.1
 [2.1.1]: https://github.com/no-problem-dev/swift-ui-routing/compare/v2.1.0...2.1.1
 [2.1.0]: https://github.com/no-problem-dev/swift-ui-routing/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/no-problem-dev/swift-ui-routing/compare/v1.0.17...v2.0.0
